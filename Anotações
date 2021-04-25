@@ -1,0 +1,10 @@
+Testar um GRASP Reativo sem o SA
+Busca local utilizando MIP: por exemplo, o GRASP dá uma solução inicial com 15 labels, vc obriga que pelo menos 13 deles estejam na solução, ou seja, vc iria buscar uma solução melhor num raio de vizinhança de 2 labels
+
+Direcionar a remoção de labels da solução na pertubação, dando mais chance pros labels que tem menos arestas serem removidos
+
+Fazer uma lista de probabilidade de cada label ser removido
+A lista deve ser inicializada com o mesmo valor de probabilidade para cada label
+Remover apenas um label em cada pertubação com base na lista de probabilidades
+Se ao remover um label, o mesmo fez com que o tamanho da solução aumentasse, a probabilidade desse label ser removido deve ser diminuida. Caso a solução melhore, a probabilidade deve aumentar.
+Quando a probabilidade de um label ser removido for alterada, isso deve afetar a probabilidade dos demais labels.

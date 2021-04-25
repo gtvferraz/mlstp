@@ -1,0 +1,4 @@
+Instância;Custo Médio Após BL;Custo Médio;Tempo Médio(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio Melhor Solução(ms);Alpha=0.05;Alpha=0.10;Alpha=0.15;Alpha=0.20;Alpha=0.25;Alpha=0.30;Iteração Média da Melhor Solução;Semente;Menor Custo Médio;Tempo Médio(ms)
+50-0.8-12;1.1;1.1;32.3438;29.6875;2.6562;0.4688;0;0;0;0;0;10;6.0000;0;1.1;39.0625
+50-0.5-12;2.0;2.0;61.8750;43.9062;17.9688;3.4375;0;0;0;0;0;10;6.0000;0;2.0;60.9375
+50-0.2-12;3.8;4.0;151.2500;38.1250;113.1250;5.0000;0;3;0;0;7;0;6.8500;0;3.8;153.1250
