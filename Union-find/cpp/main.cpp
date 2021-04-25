@@ -1416,7 +1416,7 @@ vector<int>* SA(Grafo* grafo, vector<int>* initialSolution, double tempInicial, 
                     auxTempoBuscaLocal = clock();
                     //buscaLocalDoisPorUm(grafo, solucao);
                     if(solucao->size() > 1)
-                        buscaLocalMIP(grafo, solucao, env, &mipGap, 3);
+                        buscaLocalMIP(grafo, solucao, env, &mipGap, 2);
                     *tempoBuscaLocal += (float)(clock() - auxTempoBuscaLocal);
                     if(solucao->size() < melhorSolucao->size()) {
                         *tempoMelhorSolucao = clock();
