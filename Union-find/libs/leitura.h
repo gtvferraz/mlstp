@@ -1,15 +1,15 @@
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include "grafo.h"
+#include "grafo_listaAdj.h"
 
 using namespace std;
 
-Grafo* carregaInstancias(const char* filePath) {
+GrafoListaAdj* carregaInstancias(const char* filePath) {
     int numVertices, numLabels;
     char *unusedReturn;
     FILE* file;
-    Grafo* grafo;
+    GrafoListaAdj* grafo;
     
     file = fopen(filePath, "rt");
     if(file == NULL) {
@@ -28,7 +28,7 @@ Grafo* carregaInstancias(const char* filePath) {
     int i = 0;
     int j;
     int count = 0;
-    grafo = new Grafo(numVertices, numLabels);
+    grafo = new GrafoListaAdj(numVertices, numLabels);
     while(!feof(file)) {
         unusedReturn = fgets(linha, 3000, file);
         split = strtok(linha, " ");

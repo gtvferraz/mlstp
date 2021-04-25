@@ -1,8 +1,10 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <vector>
-#include "grafo.h"
 
 using namespace std;
-
+/*
 struct No {
     int f;
     vector<int> solucao;
@@ -27,38 +29,25 @@ struct Label {
         this->numArestas = numArestas;
     }
 };
-
+*/
 struct AuxiliaOrdenacao {
-    Grafo* grafo;
-    int label;
     int posLabel;
     int numCompConexas;
 
-    AuxiliaOrdenacao(Grafo* grafo, int label) {
-        this->grafo = grafo;
-        this->label = label;
-    }
-
     AuxiliaOrdenacao(int numCompConexas, int posLabel) {
-        grafo = NULL;
         this->numCompConexas = numCompConexas;
         this->posLabel = posLabel;
     }
-
-    ~AuxiliaOrdenacao() {
-        if(grafo != NULL)
-            delete grafo;
-    }
 };
-
+/*
 bool compara_sort(AuxiliaOrdenacao* a, AuxiliaOrdenacao* b) {
     return (a->grafo->numCompConexas < b->grafo->numCompConexas);
 }
-
+*/
 bool compara_sort_b(AuxiliaOrdenacao* a, AuxiliaOrdenacao* b) {
     return (a->numCompConexas < b->numCompConexas);
 }
-
+/*
 bool compara_sort_f(No* a, No* b) {
     return (a->f < b->f);
 }
@@ -66,14 +55,14 @@ bool compara_sort_f(No* a, No* b) {
 bool compara_sort_arestas(Label* a, Label* b) {
     return (a->numArestas > b->numArestas);
 }
-
+*/
 bool taNoVetor(vector<int>* vetor, int x) {
     for(int i=0; i<vetor->size(); i++)
         if(vetor->at(i) == x)
             return true;
     return false;
 }
-
+/*
 void removeCiclos(Grafo* grafo) {
     vector<int> lista;
     vector<int> verticesVisitados;
@@ -112,4 +101,6 @@ void removeCiclos(Grafo* grafo) {
             verticeAnterior.erase(verticeAnterior.begin());
         }
     }
-}
+}*/
+
+#endif

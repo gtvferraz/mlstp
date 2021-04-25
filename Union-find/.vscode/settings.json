@@ -46,6 +46,7 @@
         "array": "cpp",
         "*.tcc": "cpp",
         "functional": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "string_view": "cpp"
     }
 }
