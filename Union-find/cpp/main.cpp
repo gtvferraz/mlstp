@@ -180,9 +180,10 @@ void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, doub
 
 void buscaLocalExcedente(GrafoListaAdj* grafo, vector<int>* solucao) {
     int labelRemovido;
-    for(int i=0; i<solucao->size(); i++) {
-        labelRemovido = solucao->at(i);
-        solucao->erase(solucao->begin()+i);
+    int size = solucao->size();
+    for(int i=0; i<size; i++) {
+        labelRemovido = solucao->at(0);
+        solucao->erase(solucao->begin());
         if(grafo->numCompConexas(solucao) > 1) {
             solucao->push_back(labelRemovido);
         }

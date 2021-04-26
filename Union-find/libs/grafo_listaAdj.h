@@ -48,10 +48,13 @@ struct GrafoListaAdj {
     vector<Vertice*> vertices;
     vector<Aresta*> arestas;
     vector<int> numArestasLabels;
+    vector<bool> visitados;
 
     GrafoListaAdj(int numVertices, int numLabels) {
-        for(int i=0; i<numVertices; i++) 
+        for(int i=0; i<numVertices; i++)  {
             vertices.push_back(new Vertice(i, numLabels));
+            visitados.push_back(false);
+        }
 
         for(int i=0; i<numLabels; i++) {
             arestas.push_back(nullptr);
@@ -111,7 +114,6 @@ struct GrafoListaAdj {
         int numLabels = arestas.size();
         int numVertices = vertices.size();
 
-        bool visitados[numVertices];
         for(int i=0; i<numVertices; i++)
             visitados[i] = false;
 
@@ -165,7 +167,6 @@ struct GrafoListaAdj {
 
         vector<vector<int>*> compConexas;
 
-        bool visitados[numVertices];
         for(int i=0; i<numVertices; i++)
             visitados[i] = false;
 
