@@ -522,6 +522,8 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
     for(int j=0; j<solucao->size(); j++)
         a.push_back(solucao->at(j));
     contabiliza.push_back(a);
+
+    
     while(temp > tempFinal) {
         /*
         cout << "Temp: " << temp  << ", " << solucao->size() << ", ";
@@ -764,7 +766,8 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     int solucaoConstrutivo;
     int numIteracoesGrasp;
     int numSolucoesSA;
-    int numSolucoesRepetidas;
+    int numSolucoesRepetidasGrasp;
+    int numSolucoesRepetidasSA;
     float tempoSolucaoInicial;
     float tempoSA;
     float tempoBuscaLocal;
@@ -790,7 +793,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     env = new GRBEnv();
     
     tempo[0] = clock();
-    solucaoInicial = GRASP(grafo, tempoLimite, &tempo[1], nullptr, &solucaoConstrutivo, env, custoOtimo, &numIteracoesGrasp, &numSolucoesRepetidas);
+    solucaoInicial = GRASP(grafo, tempoLimite, &tempo[1], nullptr, &solucaoConstrutivo, env, custoOtimo, &numIteracoesGrasp, &numSolucoesRepetidasGrasp);
     tempoSolucaoInicial = (float)(tempo[1] - tempo[0]) / CLOCKS_PER_SEC;
     tempoSolucaoInicial *= 1000;
     tempoMelhorSolucao = tempoSolucaoInicial;
@@ -800,7 +803,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     
     if(solucaoInicial->size() != custoOtimo) {
         tempo[0] = clock();
-        solucaoSA = SA(grafo, solucaoInicial, tempInicial, tempFinal, numIteracoes, alpha, &tempo[1], &tempoBuscaLocal, custoOtimo, &numSolucoesSA, &numSolucoesRepetidas, env);
+        solucaoSA = SA(grafo, solucaoInicial, tempInicial, tempFinal, numIteracoes, alpha, &tempo[1], &tempoBuscaLocal, custoOtimo, &numSolucoesSA, &numSolucoesRepetidasSA, env);
         tempoSA = (float)(clock() - tempo[0]) / CLOCKS_PER_SEC;
         if(solucaoSA->size() < custoSolucaoInicial) {
             tempoMelhorSolucao = (float)(tempo[1] - tempo[0]) / CLOCKS_PER_SEC;
@@ -809,6 +812,8 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
         tempoSA *= 1000; //passando para ms
         tempoSA += tempoSolucaoInicial;
     } else {
+        numSolucoesSA = 0;
+        numSolucoesRepetidasSA = 0;
         solucaoSA = solucaoInicial;
         tempoSA = 0;
         tempoBuscaLocal = 0;
@@ -818,7 +823,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
 
     ss.str("");
     ss.clear();
-    ss << "\n" << solucaoSA->size() << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numSolucoesSA << ";" << numSolucoesRepetidas << ";" << seed;
+    ss << "\n" << solucaoSA->size() << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << seed;
     fputs(ss.str().c_str(), file);
     
     fclose(file);

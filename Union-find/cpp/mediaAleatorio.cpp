@@ -8,7 +8,7 @@ using namespace std;
 
 #define NUMDADOSREATIVO 9
 #define NUMDADOSGRASP 11
-#define NUMDADOSSA 11
+#define NUMDADOSSA 13
 
 // g++ cpp/mediaAleatorio.cpp -O3 -o mediaAleatorio.out
 // ./mediaAleatorio.out 0 dataset/instances/g2/50/hd/50/0.txt 10 200 50 0
@@ -190,14 +190,17 @@ void calculaMediaSA(string entrada) {
     char linha[300];
     int firstSeed;
     int i = 0;
+    int numMenorCusto = 0;
     int menorCusto = INT_MAX;
-    int numSolucoes = 0;
-    int numSolucoesRepetidas = 0;
+    int numSolucoesSA = 0;
+    int numSolucoesGrasp = 0;
+    int numSolucoesRepetidasSA = 0;
+    int numSolucoesRepetidasGrasp = 0;
     float tempoLimite;
-    float menorTempo;
     float mediaCusto = 0;
     float mediaConstrutivo = 0;
     float mediaTempo = 0;
+    float mediaTempoMenorCusto = 0;
     float mediaTempoSolucaoInicial = 0;
     float mediaTempoBuscaLocal = 0;
     float mediaTempoConstrutivo = 0;
@@ -215,15 +218,10 @@ void calculaMediaSA(string entrada) {
             split = strtok(NULL, ";");
         }
 
-        if(dados[0] == menorCusto) {
-            if(dados[6] <= menorTempo) {
-                menorCusto = dados[0];
-                menorTempo = dados[6];
-            }
-        }
-        else if(dados[0] < menorCusto) {
+        if(dados[0] <= menorCusto) {
+            numMenorCusto++;
             menorCusto = dados[0];
-            menorTempo = dados[6];
+            mediaTempoMenorCusto += dados[6];
         }
 
         if(i == 0) {
@@ -238,8 +236,10 @@ void calculaMediaSA(string entrada) {
         mediaTempoConstrutivo += dados[4];
         mediaTempoBuscaLocal += dados[5];
         mediaTempo += dados[6];
-        numSolucoes += dados[8];
-        numSolucoesRepetidas += dados[9];
+        numSolucoesGrasp += dados[8];
+        numSolucoesRepetidasGrasp += dados[9];
+        numSolucoesSA += dados[10];
+        numSolucoesRepetidasSA += dados[11];
 
         i++;
     }
@@ -251,6 +251,7 @@ void calculaMediaSA(string entrada) {
     mediaTempoBuscaLocal /= i;
     mediaTempoConstrutivo /= i;
     mediaTempo /= i;
+    mediaTempoMenorCusto /= numMenorCusto;
 
     fclose(file);
     file = fopen(entrada.c_str(), "a");
@@ -258,7 +259,7 @@ void calculaMediaSA(string entrada) {
     stringstream ss;
     ss.str("");
     ss.clear();
-    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << menorTempo << ";" << numSolucoes << ";" << numSolucoesRepetidas;
+    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA;
     fputs(ss.str().c_str(), file);
 
     fclose(file);

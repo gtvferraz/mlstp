@@ -10,7 +10,7 @@ using namespace std;
 #define NUMDADOSREATIVO 11
 #define NUMDADOSGRASP 13
 #define NUMDADOSMIP 4
-#define NUMDADOSSA 13
+#define NUMDADOSSA 15
 #define NUMALPHAS 6
 
 // g++ cpp/mediaGrupo.cpp -O3 -o mediaGrupo.out
@@ -37,8 +37,10 @@ int main(int argc, char** argv) {
     char linha[300];
     int numLinha;
     int countAlpha[6];
-    int numSolucoes = 0;
-    int numSolucoesRepetidas = 0;
+    int numSolucoesSA = 0;
+    int numSolucoesGrasp = 0;
+    int numSolucoesRepetidasSA = 0;
+    int numSolucoesRepetidasGrasp = 0;
     float tempoLimite;
     float mediaCusto = 0;
     float mediaMenorTempo = 0;
@@ -194,8 +196,8 @@ int main(int argc, char** argv) {
                     mediaMenorCusto += dados[8];
                     mediaMenorTempo += dados[9];
                     mediaIteracao += dados[10];
-                    numSolucoes += dados[11];
-                    numSolucoesRepetidas += dados[12];
+                    numSolucoesGrasp += dados[11];
+                    numSolucoesRepetidasGrasp += dados[12];
                 } else if(metodo == 2) {
                     mediaTempo += dados[1];
                     mediaTempoSolucaoInicial += dados[2];
@@ -209,8 +211,10 @@ int main(int argc, char** argv) {
                     mediaTempo += dados[6];
                     mediaMenorCusto += dados[9];
                     mediaMenorTempo += dados[10];
-                    numSolucoes += dados[11];
-                    numSolucoesRepetidas += dados[12];
+                    numSolucoesGrasp += dados[11];
+                    numSolucoesRepetidasGrasp += dados[12];
+                    numSolucoesSA += dados[13];
+                    numSolucoesRepetidasSA += dados[14];
                 }
                 
                 break;
@@ -247,12 +251,12 @@ int main(int argc, char** argv) {
     } else if(metodo == 1 || metodo == 4) {
         fprintf(file, "%.1f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempo, mediaTempoConstrutivo, mediaTempoBuscaLocal);
         fprintf(file, "%.2f;%.4f;", tempoLimite, mediaTempoMelhorSolucao);
-        fprintf(file, "%i;%.1f;%.4f;%.2f;%i;%i", seed, mediaMenorCusto, mediaMenorTempo, mediaIteracao, numSolucoes, numSolucoesRepetidas);
+        fprintf(file, "%i;%.1f;%.4f;%.2f;%i;%i", seed, mediaMenorCusto, mediaMenorTempo, mediaIteracao, numSolucoesGrasp, numSolucoesRepetidasGrasp);
     } else if(metodo == 2) {
         fprintf(file, "%.4f;%.4f;%.4f", mediaTempo, mediaTempoSolucaoInicial, mediaMipGap);
     } else if(metodo == 3) {
         fprintf(file, "%.1f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoBuscaLocal, mediaTempo);
-        fprintf(file, "%.3f;%i;%.1f;%.4f;%i;%i", tempoLimite, seed, mediaMenorCusto, mediaMenorTempo, numSolucoes, numSolucoesRepetidas);
+        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoesSA, numSolucoesRepetidasSA);
     }
     
     fclose(file);
