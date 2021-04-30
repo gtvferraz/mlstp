@@ -5,7 +5,7 @@
 using namespace std;
 
 #define SEED 0
-// Tenho que dividir meu tempo por 0,9033 para comparar com o do artigo
+// Tenho que multiplicar meu tempo por 1,10616 para comparar com o do artigo
 // g++ cpp/executaTodosGrupos.cpp -O3 -o executaTodosGrupos.out
 // método(0 - Reativo, 1 - GRASP, 2 - MIP)
 // Reativo: 0, grupo, numero de vertices, densidade, numero de labels, numero de execuções do reativo, N, B
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
             fputs("Instância;Custo Médio;Tempo Médio(ms);Tempo Médio Solução Inicial(ms);MIPGap\n", file);
         } else if(metodo == 3) {
             file = fopen("saidasSA/saidaGrupo1.csv", "w+");
-            fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA\n", file);
+            fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
         }
         fclose(file);
 
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
             fputs("Instância;Custo Médio;Tempo Médio(ms);Tempo Médio Solução Inicial(ms);MIPGap\n", file);
         } else if(metodo == 3) {
             file = fopen("saidasSA/saidaGrupo2.csv", "w+");
-            fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA\n", file);
+            fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
         }
         fclose(file);
 

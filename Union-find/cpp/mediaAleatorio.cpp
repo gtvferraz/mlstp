@@ -8,7 +8,7 @@ using namespace std;
 
 #define NUMDADOSREATIVO 9
 #define NUMDADOSGRASP 11
-#define NUMDADOSSA 13
+#define NUMDADOSSA 14
 
 // g++ cpp/mediaAleatorio.cpp -O3 -o mediaAleatorio.out
 // ./mediaAleatorio.out 0 dataset/instances/g2/50/hd/50/0.txt 10 200 50 0
@@ -196,6 +196,7 @@ void calculaMediaSA(string entrada) {
     int numSolucoesGrasp = 0;
     int numSolucoesRepetidasSA = 0;
     int numSolucoesRepetidasGrasp = 0;
+    int numRepeticoesParciais = 0;
     float tempoLimite;
     float mediaCusto = 0;
     float mediaConstrutivo = 0;
@@ -225,7 +226,7 @@ void calculaMediaSA(string entrada) {
         }
 
         if(i == 0) {
-            firstSeed = dados[10];
+            firstSeed = dados[13];
             tempoLimite = dados[7];
         }
 
@@ -240,6 +241,7 @@ void calculaMediaSA(string entrada) {
         numSolucoesRepetidasGrasp += dados[9];
         numSolucoesSA += dados[10];
         numSolucoesRepetidasSA += dados[11];
+        numRepeticoesParciais += dados[12];
 
         i++;
     }
@@ -259,7 +261,7 @@ void calculaMediaSA(string entrada) {
     stringstream ss;
     ss.str("");
     ss.clear();
-    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA;
+    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << numRepeticoesParciais;
     fputs(ss.str().c_str(), file);
 
     fclose(file);

@@ -10,7 +10,7 @@ using namespace std;
 #define NUMDADOSREATIVO 11
 #define NUMDADOSGRASP 13
 #define NUMDADOSMIP 4
-#define NUMDADOSSA 15
+#define NUMDADOSSA 16
 #define NUMALPHAS 6
 
 // g++ cpp/mediaGrupo.cpp -O3 -o mediaGrupo.out
@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     int numSolucoesGrasp = 0;
     int numSolucoesRepetidasSA = 0;
     int numSolucoesRepetidasGrasp = 0;
+    int numRepeticoesParciais = 0;
     float tempoLimite;
     float mediaCusto = 0;
     float mediaMenorTempo = 0;
@@ -215,6 +216,7 @@ int main(int argc, char** argv) {
                     numSolucoesRepetidasGrasp += dados[12];
                     numSolucoesSA += dados[13];
                     numSolucoesRepetidasSA += dados[14];
+                    numRepeticoesParciais += dados[15];
                 }
                 
                 break;
@@ -240,7 +242,7 @@ int main(int argc, char** argv) {
     ss << instancia << "/mediaGrupo.txt"; 
     file = fopen(ss.str().c_str(), "w+");
 
-    fprintf(file, "%.1f;", mediaCusto);
+    fprintf(file, "%.4f;", mediaCusto);
     if(metodo == 0) {
         fprintf(file, "%.1f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempo, mediaTempoConstrutivo, mediaTempoBuscaLocal);
         fprintf(file, "%.4f;", mediaTempoMelhorSolucao);
@@ -255,8 +257,8 @@ int main(int argc, char** argv) {
     } else if(metodo == 2) {
         fprintf(file, "%.4f;%.4f;%.4f", mediaTempo, mediaTempoSolucaoInicial, mediaMipGap);
     } else if(metodo == 3) {
-        fprintf(file, "%.1f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoBuscaLocal, mediaTempo);
-        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoesSA, numSolucoesRepetidasSA);
+        fprintf(file, "%.4f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoBuscaLocal, mediaTempo);
+        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoesSA, numSolucoesRepetidasSA, numRepeticoesParciais);
     }
     
     fclose(file);
