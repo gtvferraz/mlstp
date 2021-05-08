@@ -13,7 +13,7 @@ using namespace std;
 // g++ cpp/mediaAleatorio.cpp -O3 -o mediaAleatorio.out
 // ./mediaAleatorio.out 0 dataset/instances/g2/50/hd/50/0.txt 10 200 50 0
 // ./mediaAleatorio.out 1 dataset/instances/g2/50/hd/50/0.txt 10 10 0
-// ./mediaAleatorio.out 3 dataset/instances/g2/100/ld/125/3.txt 10 50 0.9 300 0.001 0.05 0
+// ./mediaAleatorio.out 3 dataset/instances/g2/200/ld/100/4.txt 10 50 0.9 300 0.001 1 0
 // ./mediaAleatorio.out 4 dataset/instances/g2/50/hd/50/0.txt 10 10 0
 
 void calculaMediaReativo(string entrada) {
@@ -344,22 +344,24 @@ int main(int argc, char** argv) {
     str2 = ss2.str();
     str.pop_back();
     str2.pop_back();
-    file = fopen(str.c_str(), "w+");
-    fclose(file);
+
+    if(seed == 0) {
+        file = fopen(str.c_str(), "w+");
+        fclose(file);
+    }
     
     int unusedIntReturn;
-    for(int i=0; i<numExecucoes; i++) {
+    for(int i=seed; i<numExecucoes; i++) {
         ss.str("");
         ss.clear();
         ss << "./main.out " << metodo << " " << str2 << " " << str << " ";
         if(metodo == 0)
-            ss << numIteracoes << " " << tamanhoBloco << " " << seed;
+            ss << numIteracoes << " " << tamanhoBloco << " " << i;
         else if(metodo == 1 || metodo == 4)
-            ss << tempoLimite << " " << seed;
+            ss << tempoLimite << " " << i;
         else if(metodo == 3)
-            ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << seed;
+            ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << i;
         unusedIntReturn = system(ss.str().c_str());    
-        seed += 1;
     }
     
     if(metodo == 0)

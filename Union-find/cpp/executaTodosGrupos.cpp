@@ -4,25 +4,24 @@
 
 using namespace std;
 
-#define SEED 0
 // Tenho que multiplicar meu tempo por 1,10616 para comparar com o do artigo
 // g++ cpp/executaTodosGrupos.cpp -O3 -o executaTodosGrupos.out
 // método(0 - Reativo, 1 - GRASP, 2 - MIP)
 // Reativo: 0, grupo, numero de vertices, densidade, numero de labels, numero de execuções do reativo, N, B
 // GRASP: 1, grupo, numero de vertices, densidade, numero de labels, numero de execuções do GRASP
 // MIP: 2, grupo, numero de vertices, densidade, numero de labels
-// SA: 3, grupo, numero de vertices, densidade, numero de labels, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final 
+// SA: 3, grupo, numero de vertices, densidade, numero de labels, instância, seed, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final 
 // GRASP Reativo: 4, grupo, numero de vertices, densidade, numero de labels, numero de execuções do GRASP
-// ./executaTodosGrupos.out 0 1 20 0.8 12 10 200 50
-// ./executaTodosGrupos.out 0 2 50 0.8 12 10 200 50
-// ./executaTodosGrupos.out 1 1 20 0.8 12 10
-// ./executaTodosGrupos.out 1 2 50 0.8 12 10
-// ./executaTodosGrupos.out 2 1 20 0.8 12
-// ./executaTodosGrupos.out 2 2 50 0.8 12
-// ./executaTodosGrupos.out 3 1 20 0.8 12 10 50 0.9 300 0.001
-// ./executaTodosGrupos.out 3 2 50 0.8 12 10 50 0.9 300 0.001
-// ./executaTodosGrupos.out 4 1 20 0.8 12 10
-// ./executaTodosGrupos.out 4 2 50 0.8 12 10
+// ./executaTodosGrupos.out 0 1 20 0.8 12 0 0 10 200 50
+// ./executaTodosGrupos.out 0 2 50 0.8 12 0 0 10 200 50
+// ./executaTodosGrupos.out 1 1 20 0.8 12 0 0 10
+// ./executaTodosGrupos.out 1 2 50 0.8 12 0 0 10
+// ./executaTodosGrupos.out 2 1 20 0.8 12 0
+// ./executaTodosGrupos.out 2 2 50 0.8 12 0
+// ./executaTodosGrupos.out 3 1 20 0.8 12 0 0 10 50 0.9 300 0.001
+// ./executaTodosGrupos.out 3 2 50 0.8 12 0 0 10 50 0.9 300 0.001
+// ./executaTodosGrupos.out 4 1 20 0.8 12 10 0 0
+// ./executaTodosGrupos.out 4 2 50 0.8 12 10 0 0
 
 int main(int argc, char** argv) {
     FILE* file;
@@ -40,6 +39,8 @@ int main(int argc, char** argv) {
     int numIteracoes;
     int tamanhoBloco;
     int metodo;
+    int instancia;
+    int seed;
     double taxaDecaimento;
     double tempInicial;
     double tempFinal;
@@ -63,15 +64,15 @@ int main(int argc, char** argv) {
             cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, numero de execuçoes do reativo, N, B" << endl;
             return 0;
         }
-        numExecucoes = atoi(argv[6]);
-        numIteracoes = atoi(argv[7]);
-        tamanhoBloco = atoi(argv[8]);
+        numExecucoes = atoi(argv[8]);
+        numIteracoes = atoi(argv[9]);
+        tamanhoBloco = atoi(argv[10]);
     } else if(metodo == 1 || metodo == 4){
         if(argc < 7) {
             cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, numero de execuçoes do reativo" << endl;
             return 0;
         }
-        numExecucoes = atoi(argv[6]);
+        numExecucoes = atoi(argv[8]);
     } else if(metodo == 2){
         if(argc < 6) {
             cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels" << endl;
@@ -82,17 +83,19 @@ int main(int argc, char** argv) {
             cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final" << endl;
             return 0;
         }
-        numExecucoes = atoi(argv[6]);
-        numIteracoes = atoi(argv[7]);
-        taxaDecaimento = stof(argv[8]);
-        tempInicial = stof(argv[9]);
-        tempFinal = stof(argv[10]);
+        numExecucoes = atoi(argv[8]);
+        numIteracoes = atoi(argv[9]);
+        taxaDecaimento = stof(argv[10]);
+        tempInicial = stof(argv[11]);
+        tempFinal = stof(argv[12]);
     }
 
     grupo = atoi(argv[2]);
     numVertices = atoi(argv[3]);
     densidade = atof(argv[4]);
     numLabels = atoi(argv[5]);
+    instancia = atoi(argv[6]);
+    seed = atoi(argv[7]);
  
     if(densidade == (float)0.8) densidade = 0;
     else if(densidade == (float)0.5) densidade = 1;
@@ -145,11 +148,15 @@ int main(int argc, char** argv) {
                 ss.clear();
                 ss << "./mediaGrupo.out " << metodo << " " << path << n[i] << "/" << d[j] << " "; 
                 if(metodo == 0)
-                    ss << numExecucoes << " " << numIteracoes << " " << tamanhoBloco << " " << SEED;
+                    ss << numExecucoes << " " << numIteracoes << " " << tamanhoBloco << " ";
                 else if(metodo == 1 || metodo == 4)
-                    ss << numExecucoes << " " << tempoLimiteLiteratura[0] << " " << " " << SEED; 
+                    ss << numExecucoes << " " << tempoLimiteLiteratura[0] << " "; 
                 else if(metodo == 3)
-                    ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " "  << tempoLimiteGraspSA[0] << " " << SEED; 
+                    ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " "  << tempoLimiteGraspSA[0] << " ";
+                
+                ss << instancia;
+                if(metodo != 2)
+                    ss << " " << seed;
 
                 int unusedIntReturn;
                 unusedIntReturn = system(ss.str().c_str());
@@ -195,6 +202,9 @@ int main(int argc, char** argv) {
                     file = fopen("saidasGRASPReativo/saidaGrupo1.csv", "a");
                 fputs(ss.str().c_str(), file);
                 fclose(file);
+
+                instancia = 0;
+                seed = 0;
             }
             countI++;
         }
@@ -254,11 +264,15 @@ int main(int argc, char** argv) {
                     ss.clear();
                     ss << "./mediaGrupo.out " << metodo << " " << path << n2[i] << "/" << d[j] << "/" << label[i][k] << " "; 
                     if(metodo == 0)
-                        ss << numExecucoes << " " << numIteracoes << " " << tamanhoBloco << " " << SEED;
+                        ss << numExecucoes << " " << numIteracoes << " " << tamanhoBloco << " ";
                     else if(metodo == 1 || metodo == 4)
-                        ss << numExecucoes << " " << tempoLimiteLiteratura[i] << " " << " " << SEED; 
+                        ss << numExecucoes << " " << tempoLimiteLiteratura[i] << " " << " "; 
                     else if(metodo == 3)
-                        ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimiteGraspSA[i] << " " << SEED; 
+                        ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimiteGraspSA[i] << " "; 
+
+                    ss << instancia;
+                    if(metodo != 2)
+                        ss << " " << seed;
 
                     int unusedIntReturn;
                     unusedIntReturn = system(ss.str().c_str());
@@ -305,6 +319,9 @@ int main(int argc, char** argv) {
                         file = fopen("saidasGRASPReativo/saidaGrupo2.csv", "a");
                     fputs(ss.str().c_str(), file);
                     fclose(file);   
+
+                    instancia = 0;
+                    seed = 0;
                 }
                 countJ++;
             }

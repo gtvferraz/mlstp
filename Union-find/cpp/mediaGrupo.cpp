@@ -14,22 +14,23 @@ using namespace std;
 #define NUMALPHAS 6
 
 // g++ cpp/mediaGrupo.cpp -O3 -o mediaGrupo.out
-// ./mediaGrupo.out 0 dataset/instances/g2/50/hd/50 10 200 50 0
-// ./mediaGrupo.out 1 dataset/instances/g2/50/hd/50 10 10 0
+// ./mediaGrupo.out 0 dataset/instances/g2/50/hd/50 10 200 50 0 0
+// ./mediaGrupo.out 1 dataset/instances/g2/50/hd/50 10 10 0 0
 // ./mediaGrupo.out 2 dataset/instances/g2/50/hd/50
-// ./mediaGrupo.out 3 dataset/instances/g2/100/ld/125 10 50 0.9 300 0.001 0.05 0
-// ./mediaGrupo.out 4 dataset/instances/g2/50/hd/50 10 10 0
+// ./mediaGrupo.out 3 dataset/instances/g2/200/ld/100 10 50 0.9 300 0.001 1 0 0
+// ./mediaGrupo.out 4 dataset/instances/g2/50/hd/50 10 10 0 0
 
 int main(int argc, char** argv) {
     FILE* file;
     stringstream ss;
     stringstream auxEntrada;
     stringstream auxInstancia;
-    string instancia;
+    string path;
     string entrada;
     int numExecucoes;
     int numIteracoes;
     int tamanhoBloco;
+    int instancia;
     int seed;
     int metodo;
     
@@ -73,7 +74,8 @@ int main(int argc, char** argv) {
         numExecucoes = atoi(argv[3]);
         numIteracoes = atoi(argv[4]);
         tamanhoBloco = atoi(argv[5]);
-        seed = atoi(argv[6]);
+        instancia = atoi(argv[6]);
+        seed = atoi(argv[7]);
         auxInstancia << "saidasReativo";
 
         for(int i=0; i<NUMALPHAS; i++)
@@ -85,7 +87,8 @@ int main(int argc, char** argv) {
         }
         numExecucoes = atoi(argv[3]);
         tempoLimite = atoi(argv[4]);
-        seed = atoi(argv[5]);
+        instancia = atoi(argv[5]);
+        seed = atoi(argv[6]);
         if(metodo == 1)
             auxInstancia << "saidasGRASP";   
         else
@@ -95,7 +98,8 @@ int main(int argc, char** argv) {
             cout << "Parametros necessarios: arquivo de entrada" << endl;
             return 0;
         }
-        auxInstancia << "saidasMIP";
+        instancia = atoi(argv[3]);
+        auxInstancia << "saidasMIP"; 
     } else if(metodo == 3){
         if(argc < 10) {
             cout << "Parametros necessarios: arquivo de entrada, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, seed" << endl;
@@ -106,8 +110,10 @@ int main(int argc, char** argv) {
         taxaDecaimento = stof(argv[5]);
         tempInicial = stof(argv[6]);
         tempFinal = stof(argv[7]);
+        
         tempoLimite = stof(argv[8]);
-        seed = atoi(argv[9]);
+        instancia = atoi(argv[9]);
+        seed = atoi(argv[10]);
         auxInstancia << "saidasSA";
     }
     entrada = argv[2];
@@ -120,13 +126,12 @@ int main(int argc, char** argv) {
         auxInstancia << "/";
         auxInstancia << split;
     }
-    instancia = auxInstancia.str();
-    instancia.pop_back();
+    path = auxInstancia.str();
+    path.pop_back();
 
     entrada = argv[2];
-    
-    for(int i=0; i<10; i++) {
-        dados.clear();
+    /*
+    for(int i=instancia; i<10; i++) {
         ss.str("");
         ss.clear();
         auxEntrada.str("");
@@ -135,21 +140,31 @@ int main(int argc, char** argv) {
         auxInstancia.clear();
         cout << "Instancia: " << i << endl;
         
-        auxInstancia << instancia << "/" << i << ".txt";
+        auxInstancia << path << "/" << i << ".txt";
         auxEntrada << entrada << "/" << i << ".txt";
         if(metodo == 2) {
             ss << "./main.out " << metodo << " " << auxEntrada.str() << " " << auxInstancia.str() << " " << numExecucoes << " ";
-        } else
+        } else {
             ss << "./mediaAleatorio.out " << metodo << " " << auxInstancia.str() << " " << numExecucoes << " ";
-        if(metodo == 0)
-             ss << numIteracoes << " " << tamanhoBloco << " " << seed;
-        else if(metodo == 1 || metodo == 4)
-            ss << tempoLimite << " " << seed;
-        else if(metodo == 3)
-            ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << seed;
+            if(metodo == 0)
+                ss << numIteracoes << " " << tamanhoBloco << " " << seed;
+            else if(metodo == 1 || metodo == 4)
+                ss << tempoLimite << " " << seed;
+            else if(metodo == 3)
+                ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << seed;
+        }
+        
         int unusedIntReturn = system(ss.str().c_str());
-
+    }
+    */
+    for(int i=0; i<10; i++) {
+        dados.clear();
         numLinha = 0;
+
+        auxInstancia.str("");
+        auxInstancia.clear();
+        auxInstancia << path << "/" << i << ".txt";
+
         file = fopen(auxInstancia.str().c_str(), "r");
         char* unusedReturn;
         while(!feof(file)) {
@@ -223,6 +238,7 @@ int main(int argc, char** argv) {
             }
             numLinha++;
         }
+        seed = 0;
     }
     mediaCusto /= 10;
     mediaConstrutivo /= 10;
@@ -239,7 +255,7 @@ int main(int argc, char** argv) {
 
     ss.str("");
     ss.clear();
-    ss << instancia << "/mediaGrupo.txt"; 
+    ss << path << "/mediaGrupo.txt"; 
     file = fopen(ss.str().c_str(), "w+");
 
     fprintf(file, "%.4f;", mediaCusto);

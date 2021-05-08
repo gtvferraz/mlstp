@@ -160,7 +160,7 @@ struct GrafoListaAdj {
         return numCompConexa;
     }
 
-    SolucaoParcial* numCompConexas2(vector<int>* labels) {
+    SolucaoParcial* numCompConexas2(bool* labels) {
         int numLabels = arestas.size();
         int numVertices = vertices.size();
 
@@ -189,23 +189,25 @@ struct GrafoListaAdj {
             }
             
             while(!proximos.empty()) {
-                for(int i=0; i<labels->size(); i++) {
-                    aux = vertices[proximos.front()]->arestas[labels->at(i)];
-                    while(aux != nullptr) {
-                        if(compConexas->at(aux->destino) == -1) {
-                            numVerticesVisitados++;
-                            compConexas->at(aux->destino) = numCompConexas-1;
-                            proximos.push(aux->destino);
-                            if(numVerticesVisitados == numVertices)  {
-                                SolucaoParcial* solucaoParcial = new SolucaoParcial();
-                                solucaoParcial->numCompConexas = numCompConexas;
-                                solucaoParcial->compConexa = compConexas;
-                                solucaoParcial->labels = labels;
-                                return solucaoParcial;
+                for(int i=0; i<arestas.size(); i++) {
+                    if(labels[i]) {
+                        aux = vertices[proximos.front()]->arestas[i];
+                        while(aux != nullptr) {
+                            if(compConexas->at(aux->destino) == -1) {
+                                numVerticesVisitados++;
+                                compConexas->at(aux->destino) = numCompConexas-1;
+                                proximos.push(aux->destino);
+                                if(numVerticesVisitados == numVertices)  {
+                                    SolucaoParcial* solucaoParcial = new SolucaoParcial();
+                                    solucaoParcial->numCompConexas = numCompConexas;
+                                    solucaoParcial->compConexa = compConexas;
+                                    solucaoParcial->labels = labels;
+                                    return solucaoParcial;
+                                }
+                                
                             }
-                            
+                            aux = aux->prox;
                         }
-                        aux = aux->prox;
                     }
                 }
                 proximos.pop();

@@ -17,11 +17,11 @@ struct AuxiliaOrdenacao {
 
 struct SolucaoParcial {
     int numCompConexas;
-    vector<int>* labels;
+    bool* labels;
     vector<int>* compConexa;
 
     ~SolucaoParcial() {
-        delete labels;
+        delete []labels;
         delete compConexa;
     }
 };
