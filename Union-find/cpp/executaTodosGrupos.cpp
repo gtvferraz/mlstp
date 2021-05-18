@@ -12,6 +12,7 @@ using namespace std;
 // MIP: 2, grupo, numero de vertices, densidade, numero de labels
 // SA: 3, grupo, numero de vertices, densidade, numero de labels, instância, seed, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final 
 // GRASP Reativo: 4, grupo, numero de vertices, densidade, numero de labels, numero de execuções do GRASP
+// IG: 5, grupo, numero de vertices, densidade, numero de labels, instância, seed, numero de execucoes do iG, numero de iteracoes
 // ./executaTodosGrupos.out 0 1 20 0.8 12 0 0 10 200 50
 // ./executaTodosGrupos.out 0 2 50 0.8 12 0 0 10 200 50
 // ./executaTodosGrupos.out 1 1 20 0.8 12 0 0 10
@@ -22,6 +23,8 @@ using namespace std;
 // ./executaTodosGrupos.out 3 2 50 0.8 12 0 0 10 50 0.9 300 0.001
 // ./executaTodosGrupos.out 4 1 20 0.8 12 10 0 0
 // ./executaTodosGrupos.out 4 2 50 0.8 12 10 0 0
+// ./executaTodosGrupos.out 5 1 20 0.8 12 0 0 10 1000
+// ./executaTodosGrupos.out 5 2 50 0.8 12 0 0 10 1000
 
 int main(int argc, char** argv) {
     FILE* file;
@@ -79,7 +82,7 @@ int main(int argc, char** argv) {
             return 0;
         }
     } else if(metodo == 3){
-        if(argc < 11) {
+        if(argc < 13) {
             cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final" << endl;
             return 0;
         }
@@ -88,6 +91,13 @@ int main(int argc, char** argv) {
         taxaDecaimento = stof(argv[10]);
         tempInicial = stof(argv[11]);
         tempFinal = stof(argv[12]);
+    } else if(metodo == 5){
+        if(argc < 10) {
+            cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, numero de execucoes do IG, numero de iteracoes" << endl;
+            return 0;
+        }
+        numExecucoes = atoi(argv[8]);
+        numIteracoes = atoi(argv[9]);
     }
 
     grupo = atoi(argv[2]);
@@ -113,6 +123,8 @@ int main(int argc, char** argv) {
             pathSaida = "saidasSA/instances/g1/";
         else if(metodo == 4)
             pathSaida = "saidasGRASPReativo/instances/g1/";
+        else if(metodo == 5)
+            pathSaida = "saidasIG/instances/g1/";
         for(int i=0; i<4; i++)
             if(n[i] == numVertices) {
                 numVertices = i;
@@ -134,6 +146,9 @@ int main(int argc, char** argv) {
         } else if(metodo == 3) {
             file = fopen("saidasSA/saidaGrupo1.csv", "w+");
             fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
+        } else if(metodo == 5) {
+            file = fopen("saidasIG/saidaGrupo1.csv", "w+");
+            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
         }
         fclose(file);
 
@@ -153,6 +168,8 @@ int main(int argc, char** argv) {
                     ss << numExecucoes << " " << tempoLimiteLiteratura[0] << " "; 
                 else if(metodo == 3)
                     ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " "  << tempoLimiteGraspSA[0] << " ";
+                else if(metodo == 5)
+                    ss << numExecucoes << " " << numIteracoes << " " << tempoLimiteGraspSA[0] << " ";
                 
                 ss << instancia;
                 if(metodo != 2)
@@ -175,6 +192,8 @@ int main(int argc, char** argv) {
                     file = fopen("saidasSA/log.txt", "w+");
                 else if(metodo == 4)
                     file = fopen("saidasGRASPReativo/log.txt", "w+");
+                else if(metodo == 5)
+                    file = fopen("saidasIG/log.txt", "w+");
                 fputs(ss.str().c_str(), file);
                 fclose(file);
 
@@ -200,6 +219,8 @@ int main(int argc, char** argv) {
                     file = fopen("saidasSA/saidaGrupo1.csv", "a");
                 else if(metodo == 4)
                     file = fopen("saidasGRASPReativo/saidaGrupo1.csv", "a");
+                else if(metodo == 5)
+                    file = fopen("saidasIG/saidaGrupo1.csv", "a");
                 fputs(ss.str().c_str(), file);
                 fclose(file);
 
@@ -220,6 +241,8 @@ int main(int argc, char** argv) {
             pathSaida = "saidasSA/instances/g2/";
         else if(metodo == 4)
             pathSaida = "saidasGRASPReativo/instances/g2/";
+        else if(metodo == 5)
+            pathSaida = "saidasIG/instances/g2/";
         for(int i=0; i<6; i++)
             if(n2[i] == numVertices) {
                 numVertices = i;
@@ -246,6 +269,9 @@ int main(int argc, char** argv) {
         } else if(metodo == 3) {
             file = fopen("saidasSA/saidaGrupo2.csv", "w+");
             fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
+        } else if(metodo == 5) {
+            file = fopen("saidasIG/saidaGrupo2.csv", "w+");
+            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
         }
         fclose(file);
 
@@ -269,6 +295,8 @@ int main(int argc, char** argv) {
                         ss << numExecucoes << " " << tempoLimiteLiteratura[i] << " " << " "; 
                     else if(metodo == 3)
                         ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimiteGraspSA[i] << " "; 
+                    else if(metodo == 5)
+                        ss << numExecucoes << " " << numIteracoes << " " << tempoLimiteGraspSA[i] << " "; 
 
                     ss << instancia;
                     if(metodo != 2)
@@ -291,6 +319,8 @@ int main(int argc, char** argv) {
                         file = fopen("saidasSA/log.txt", "w+");
                     else if(metodo == 4)
                         file = fopen("saidasGRASPReativo/log.txt", "w+");
+                    else if(metodo == 5)
+                        file = fopen("saidasIG/log.txt", "w+");
                     fputs(ss.str().c_str(), file);
                     fclose(file);
                  
@@ -317,6 +347,8 @@ int main(int argc, char** argv) {
                         file = fopen("saidasSA/saidaGrupo2.csv", "a");
                     else if(metodo == 4)
                         file = fopen("saidasGRASPReativo/saidaGrupo2.csv", "a");
+                    else if(metodo == 5)
+                        file = fopen("saidasIG/saidaGrupo2.csv", "a");
                     fputs(ss.str().c_str(), file);
                     fclose(file);   
 

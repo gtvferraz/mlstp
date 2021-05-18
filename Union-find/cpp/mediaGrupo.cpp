@@ -11,6 +11,7 @@ using namespace std;
 #define NUMDADOSGRASP 13
 #define NUMDADOSMIP 4
 #define NUMDADOSSA 16
+#define NUMDADOSIG 16
 #define NUMALPHAS 6
 
 // g++ cpp/mediaGrupo.cpp -O3 -o mediaGrupo.out
@@ -19,6 +20,7 @@ using namespace std;
 // ./mediaGrupo.out 2 dataset/instances/g2/50/hd/50
 // ./mediaGrupo.out 3 dataset/instances/g2/200/ld/100 10 50 0.9 300 0.001 1 0 0
 // ./mediaGrupo.out 4 dataset/instances/g2/50/hd/50 10 10 0 0
+// ./mediaGrupo.out 5 dataset/instances/g2/200/ld/100 10 1000 1 0 0
 
 int main(int argc, char** argv) {
     FILE* file;
@@ -38,9 +40,9 @@ int main(int argc, char** argv) {
     char linha[300];
     int numLinha;
     int countAlpha[6];
-    int numSolucoesSA = 0;
+    int numSolucoes = 0;
     int numSolucoesGrasp = 0;
-    int numSolucoesRepetidasSA = 0;
+    int numSolucoesRepetidas = 0;
     int numSolucoesRepetidasGrasp = 0;
     int numRepeticoesParciais = 0;
     float tempoLimite;
@@ -101,8 +103,8 @@ int main(int argc, char** argv) {
         instancia = atoi(argv[3]);
         auxInstancia << "saidasMIP"; 
     } else if(metodo == 3){
-        if(argc < 10) {
-            cout << "Parametros necessarios: arquivo de entrada, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, seed" << endl;
+        if(argc < 11) {
+            cout << "Parametros necessarios: arquivo de entrada, numero de execucoes do SA, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, instancia, seed" << endl;
             return 0;
         }
         numExecucoes = atoi(argv[3]);
@@ -115,6 +117,18 @@ int main(int argc, char** argv) {
         instancia = atoi(argv[9]);
         seed = atoi(argv[10]);
         auxInstancia << "saidasSA";
+    } else if(metodo == 5){
+        if(argc < 8) {
+            cout << "Parametros necessarios: arquivo de entrada, numero de execucoes do IG, numero de iteracoes, tempo limite do GRASP, instancia, seed" << endl;
+            return 0;
+        }
+        numExecucoes = atoi(argv[3]);
+        numIteracoes = atoi(argv[4]);
+        
+        tempoLimite = stof(argv[5]);
+        instancia = atoi(argv[6]);
+        seed = atoi(argv[7]);
+        auxInstancia << "saidasIG";
     }
     entrada = argv[2];
 
@@ -130,7 +144,7 @@ int main(int argc, char** argv) {
     path.pop_back();
 
     entrada = argv[2];
-    /*
+    
     for(int i=instancia; i<10; i++) {
         ss.str("");
         ss.clear();
@@ -152,11 +166,14 @@ int main(int argc, char** argv) {
                 ss << tempoLimite << " " << seed;
             else if(metodo == 3)
                 ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << seed;
+            else if(metodo == 5)
+                ss << numIteracoes << " " << tempoLimite << " " << seed;
         }
         
         int unusedIntReturn = system(ss.str().c_str());
+        seed = 0;
     }
-    */
+    
     for(int i=0; i<10; i++) {
         dados.clear();
         numLinha = 0;
@@ -188,6 +205,11 @@ int main(int argc, char** argv) {
                     }
                 else if(metodo == 3)
                     for(int j=0; j<NUMDADOSSA; j++) {
+                        dados.push_back(atof(split));
+                        split = strtok(NULL, ";");
+                    }
+                else if(metodo == 5)
+                    for(int j=0; j<NUMDADOSIG; j++) {
                         dados.push_back(atof(split));
                         split = strtok(NULL, ";");
                     }
@@ -229,8 +251,22 @@ int main(int argc, char** argv) {
                     mediaMenorTempo += dados[10];
                     numSolucoesGrasp += dados[11];
                     numSolucoesRepetidasGrasp += dados[12];
-                    numSolucoesSA += dados[13];
-                    numSolucoesRepetidasSA += dados[14];
+                    numSolucoes += dados[13];
+                    numSolucoesRepetidas += dados[14];
+                    numRepeticoesParciais += dados[15];
+                }  else if(metodo == 5) {
+                    mediaConstrutivo += dados[1];
+                    mediaTempoSolucaoInicial += dados[2];
+                    mediaTempoTotal += dados[3];
+                    mediaTempoConstrutivo += dados[4];
+                    mediaTempoBuscaLocal += dados[5];
+                    mediaTempo += dados[6];
+                    mediaMenorCusto += dados[9];
+                    mediaMenorTempo += dados[10];
+                    numSolucoesGrasp += dados[11];
+                    numSolucoesRepetidasGrasp += dados[12];
+                    numSolucoes += dados[13];
+                    numSolucoesRepetidas += dados[14];
                     numRepeticoesParciais += dados[15];
                 }
                 
@@ -274,7 +310,10 @@ int main(int argc, char** argv) {
         fprintf(file, "%.4f;%.4f;%.4f", mediaTempo, mediaTempoSolucaoInicial, mediaMipGap);
     } else if(metodo == 3) {
         fprintf(file, "%.4f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoBuscaLocal, mediaTempo);
-        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoesSA, numSolucoesRepetidasSA, numRepeticoesParciais);
+        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoes, numSolucoesRepetidas, numRepeticoesParciais);
+    } else if(metodo == 5) {
+        fprintf(file, "%.4f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoBuscaLocal, mediaTempo);
+        fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoes, numSolucoesRepetidas, numRepeticoesParciais);
     }
     
     fclose(file);

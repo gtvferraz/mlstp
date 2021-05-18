@@ -229,6 +229,56 @@ struct GrafoListaAdj {
         return solucaoParcial;
     }
 
+    int getRoot(vector<int>* roots, int id) {
+        while(roots->at(id) != id) {
+            id = roots->at(roots->at(id));
+        }
+        return id;
+    }
+
+    SolucaoParcial* numCompConexas3(bool* labels) {
+        int numLabels = arestas.size();
+        int numVertices = vertices.size();
+
+        vector<int>* compConexas = new vector<int>;
+
+        for(int i=0; i<numVertices; i++)
+            compConexas->push_back(i);
+
+        int numCompConexas = numVertices;
+        Aresta* aux;
+
+        for(int i=0; i<arestas.size(); i++) {
+            if(labels[i]) {
+                aux = arestas[i];
+                while(aux != nullptr) {
+                    int origemRoot = getRoot(compConexas, aux->origem);
+                    int destinoRoot = getRoot(compConexas, aux->destino);
+                    if(origemRoot != destinoRoot) {
+                        compConexas->at(origemRoot) = destinoRoot;
+                        numCompConexas--;
+                        if(numCompConexas == 1) {
+                            SolucaoParcial* solucaoParcial = new SolucaoParcial();
+                            solucaoParcial->numCompConexas = numCompConexas;
+                            solucaoParcial->compConexa = compConexas;
+                            solucaoParcial->labels = labels;
+                            
+                            return solucaoParcial;
+                        }
+                    }
+                    aux = aux->prox;
+                }
+            }
+        }
+
+        SolucaoParcial* solucaoParcial = new SolucaoParcial();
+        solucaoParcial->numCompConexas = numCompConexas;
+        solucaoParcial->compConexa = compConexas;
+        solucaoParcial->labels = labels;
+        
+        return solucaoParcial;
+    }
+
     int numCompConexasParcial(vector<int>* labels, SolucaoParcial* solucaoParcial) {
         int numLabels = arestas.size();
         int numVertices = vertices.size();
@@ -341,6 +391,166 @@ struct GrafoListaAdj {
         for(int i=0; i<compConexas.size(); i++)
             delete compConexas[i];
 
+        return labelsCompConexas;
+    }
+
+    vector<vector<int>*>* labelsCompConexasParcial(vector<int>* labels, SolucaoParcial* solucaoParcial) {
+        int numLabels = arestas.size();
+        int numVertices = vertices.size();
+
+        int numCompConexa = solucaoParcial->numCompConexas;
+        int numVerticesVisitados = 0;
+        Aresta* aux;
+
+        for(int i=0; i<numVertices; i++)
+            visitados[i] = solucaoParcial->compConexa->at(i);
+
+        int auxCompConexa;
+        for(int i=0; i<labels->size(); i++) {
+            aux = arestas[labels->at(i)];
+            while(aux != nullptr) {
+                if(visitados[aux->origem] != visitados[aux->destino]) {
+                    numCompConexa--;
+
+                    if(visitados[aux->origem] < visitados[aux->destino]) {
+                        auxCompConexa = visitados[aux->destino];
+                        for(int j=0; j<numVertices; j++)
+                            if(visitados[j] == auxCompConexa)
+                                visitados[j] = visitados[aux->origem];
+                    } else {
+                        auxCompConexa = visitados[aux->origem];
+                        for(int j=0; j<numVertices; j++)
+                            if(visitados[j] == auxCompConexa)
+                                visitados[j] = visitados[aux->destino];
+                    }
+
+                    if(numCompConexa == 1) 
+                        return nullptr;   
+                }
+                aux = aux->prox;
+            }
+        }
+
+        vector<vector<int>*>* labelsCompConexas = new vector<vector<int>*>;
+        for(int i=0; i<numCompConexa; i++) {
+            labelsCompConexas->push_back(new vector<int>);
+            for(int j=0; j<arestas.size(); j++)
+                labelsCompConexas->at(i)->push_back(0);
+        }
+
+        vector<int> compConexas;
+        for(int i=0; i<numVertices; i++)
+            if(!taNoVetor(&compConexas, visitados[i]))
+                compConexas.push_back(visitados[i]);
+        sort(compConexas.begin(), compConexas.end());
+
+        bool verifica;
+        for(int i=0; !compConexas.empty(); i++) {
+            verifica = false;
+            for(int j=0; j<numVertices; j++) {
+                if(visitados[j] == i) {
+                    verifica = true;
+                    break;
+                }
+            }
+            if(!verifica) {
+                for(int j=0; j<numVertices; j++) {
+                    if(visitados[j] == compConexas.back()) {
+                        visitados[j] = i;
+                        verifica = true;
+                    }
+                }
+                if(verifica)
+                    compConexas.pop_back();
+            } else {
+                compConexas.erase(compConexas.begin());
+            }
+        }
+        
+        for(int i=0; i<arestas.size(); i++) {
+            aux = arestas[i];
+            while(aux != nullptr) {
+                if(visitados[aux->origem] != visitados[aux->destino] || visitados[aux->origem] == -1) {
+                    labelsCompConexas->at(visitados[aux->origem])->at(i) = 1;
+                    labelsCompConexas->at(visitados[aux->destino])->at(i) = 1;
+                }
+                aux = aux->prox;
+            }
+        }
+        
+        /*cout << "YYY: " << labelsCompConexas->size() << endl;
+        for(int j=0; j<labelsCompConexas->size(); j++) {
+            for(int k=0; k<labelsCompConexas->at(j)->size(); k++)
+                cout << " " << labelsCompConexas->at(j)->at(k);
+            cout << endl << "---------------------" << endl;
+        }*/
+
+        return labelsCompConexas;
+    }
+
+    vector<vector<int>*>* labelsCompConexasParcial2(vector<int>* labels, SolucaoParcial* solucaoParcial) {
+        int numLabels = arestas.size();
+        int numVertices = vertices.size();
+
+        vector<int>* compConexas = new vector<int>;
+        for(int i=0; i<numVertices; i++) 
+            compConexas->push_back(solucaoParcial->compConexa->at(i));
+
+        bool labelsVisitados[numLabels];
+        for(int i=0; i<numLabels; i++)
+            labelsVisitados[i] = false; 
+        
+        int numCompConexa = solucaoParcial->numCompConexas;
+        vector<vector<int>*>* labelsCompConexas = new vector<vector<int>*>;
+        for(int i=0; i<numVertices; i++) {
+            labelsCompConexas->push_back(new vector<int>);
+        }
+
+        Aresta* aux;
+        for(int i=0; i<labels->size(); i++) {
+            aux = arestas[labels->at(i)];
+            while(aux != nullptr) {
+                int origemRoot = getRoot(compConexas, aux->origem);
+                int destinoRoot = getRoot(compConexas, aux->destino);
+                if(origemRoot != destinoRoot) {
+                    compConexas->at(origemRoot) = destinoRoot;
+                    numCompConexa--;
+                    if(numCompConexa == 1) {
+                        delete compConexas;
+                        for(int j=0; j<labelsCompConexas->size(); j++)
+                            delete labelsCompConexas->at(j);
+                        delete labelsCompConexas;
+                        return nullptr;
+                    }
+                }
+                aux = aux->prox;
+            }
+            labelsVisitados[labels->at(i)] = true;
+        }
+
+        for(int i=0; i<arestas.size(); i++) {
+            if(!labelsVisitados[i]) {
+                aux = arestas[i];
+                while(aux != nullptr) {
+                    int origemRoot = getRoot(compConexas, aux->origem);
+                    int destinoRoot = getRoot(compConexas, aux->destino);
+                    if(origemRoot != destinoRoot) {
+                        if(labelsCompConexas->at(origemRoot)->size() == 0)
+                            labelsCompConexas->at(origemRoot)->push_back(i);
+                        else if(labelsCompConexas->at(origemRoot)->back() != i)
+                            labelsCompConexas->at(origemRoot)->push_back(i);
+
+                        if(labelsCompConexas->at(destinoRoot)->size() == 0)
+                            labelsCompConexas->at(destinoRoot)->push_back(i);
+                        else if(labelsCompConexas->at(destinoRoot)->back() != i)
+                            labelsCompConexas->at(destinoRoot)->push_back(i);
+                    }
+                    aux = aux->prox;
+                }
+            }
+        }
+        delete compConexas;
+        
         return labelsCompConexas;
     }
 

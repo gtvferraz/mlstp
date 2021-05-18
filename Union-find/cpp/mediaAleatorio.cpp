@@ -9,12 +9,14 @@ using namespace std;
 #define NUMDADOSREATIVO 9
 #define NUMDADOSGRASP 11
 #define NUMDADOSSA 14
+#define NUMDADOSIG 14
 
 // g++ cpp/mediaAleatorio.cpp -O3 -o mediaAleatorio.out
 // ./mediaAleatorio.out 0 dataset/instances/g2/50/hd/50/0.txt 10 200 50 0
 // ./mediaAleatorio.out 1 dataset/instances/g2/50/hd/50/0.txt 10 10 0
 // ./mediaAleatorio.out 3 dataset/instances/g2/200/ld/100/4.txt 10 50 0.9 300 0.001 1 0
 // ./mediaAleatorio.out 4 dataset/instances/g2/50/hd/50/0.txt 10 10 0
+// ./mediaAleatorio.out 5 dataset/instances/g2/200/ld/100/4.txt 10 1000 1 0
 
 void calculaMediaReativo(string entrada) {
     FILE* file;
@@ -267,6 +269,96 @@ void calculaMediaSA(string entrada) {
     fclose(file);
 }
 
+void calculaMediaIG(string entrada) {
+    FILE* file;
+    file = fopen(entrada.c_str(), "r");
+    
+    if(file == NULL) {
+        cout << "Arquivo inexistente" << endl;
+        return ;
+    }
+
+    char* split;
+    char linha[300];
+    int firstSeed;
+    int i = 0;
+    int numMenorCusto = 0;
+    int menorCusto = INT_MAX;
+    int numSolucoesSA = 0;
+    int numSolucoesGrasp = 0;
+    int numSolucoesRepetidasIG = 0;
+    int numSolucoesRepetidasGrasp = 0;
+    int numRepeticoesParciais = 0;
+    float tempoLimite;
+    float mediaCusto = 0;
+    float mediaConstrutivo = 0;
+    float mediaTempo = 0;
+    float mediaTempoMenorCusto = 0;
+    float mediaTempoSolucaoInicial = 0;
+    float mediaTempoBuscaLocal = 0;
+    float mediaTempoConstrutivo = 0;
+    float mediaTempoTotal = 0;
+    float dados[NUMDADOSIG];
+
+    char* unusedReturn;
+    unusedReturn = fgets(linha, 300, file);
+    while(!feof(file)) {
+        unusedReturn = fgets(linha, 300, file);
+        split = strtok(linha, ";");
+
+        for(int j=0; j<NUMDADOSIG; j++) {
+            dados[j] = atof(split);
+            split = strtok(NULL, ";");
+        }
+
+        if(dados[0] <= menorCusto) {
+            numMenorCusto++;
+            menorCusto = dados[0];
+            mediaTempoMenorCusto += dados[6];
+        }
+
+        if(i == 0) {
+            firstSeed = dados[13];
+            tempoLimite = dados[7];
+        }
+
+        mediaCusto += dados[0];
+        mediaConstrutivo += dados[1];
+        mediaTempoSolucaoInicial += dados[2];
+        mediaTempoTotal += dados[3];
+        mediaTempoConstrutivo += dados[4];
+        mediaTempoBuscaLocal += dados[5];
+        mediaTempo += dados[6];
+        numSolucoesGrasp += dados[8];
+        numSolucoesRepetidasGrasp += dados[9];
+        numSolucoesSA += dados[10];
+        numSolucoesRepetidasIG += dados[11];
+        numRepeticoesParciais += dados[12];
+
+        i++;
+    }
+
+    mediaCusto /= i;
+    mediaConstrutivo /= i;
+    mediaTempoSolucaoInicial /= i;
+    mediaTempoTotal /= i;
+    mediaTempoBuscaLocal /= i;
+    mediaTempoConstrutivo /= i;
+    mediaTempo /= i;
+    mediaTempoMenorCusto /= numMenorCusto;
+
+    fclose(file);
+    file = fopen(entrada.c_str(), "a");
+
+    stringstream ss;
+    ss.str("");
+    ss.clear();
+    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasIG << ";" << numRepeticoesParciais;
+    fputs(ss.str().c_str(), file);
+
+    fclose(file);
+}
+
 int main(int argc, char** argv) {
     FILE* file;
     char* entrada;
@@ -324,6 +416,15 @@ int main(int argc, char** argv) {
         tempFinal = stof(argv[7]);
         tempoLimite = stof(argv[8]);
         seed = atoi(argv[9]);
+    } else if(metodo == 5){
+        if(argc < 7) {
+            cout << "Parametros necessarios: arquivo de entrada, numero de execucoes do IG, numero de iteracoes, tempo limite do GRASP, seed" << endl;
+            return 0;
+        }
+        ss << "saidasIG";
+        numIteracoes = atoi(argv[4]);
+        tempoLimite = stof(argv[5]);
+        seed = atoi(argv[6]);
     }
     entrada = argv[2];
     numExecucoes = atoi(argv[3]);
@@ -361,6 +462,8 @@ int main(int argc, char** argv) {
             ss << tempoLimite << " " << i;
         else if(metodo == 3)
             ss << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimite << " " << i;
+        else if(metodo == 5)
+            ss << numIteracoes << " " << tempoLimite << " " << i;
         unusedIntReturn = system(ss.str().c_str());    
     }
     
@@ -370,4 +473,6 @@ int main(int argc, char** argv) {
         calculaMediaGRASP(str);
     else if(metodo == 3)
         calculaMediaSA(str);
+    else if(metodo == 5)
+        calculaMediaIG(str);
 }
