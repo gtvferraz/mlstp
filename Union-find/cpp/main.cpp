@@ -37,10 +37,11 @@ class mycallback: public GRBCallback {
         clock_t tempoInicio;
         int custoOtimo;
 
-        mycallback(int numVars, GRBVar* vars, GrafoListaAdj* grafo, clock_t tempoInicio, int custoOtimo) {
+        mycallback(int numVars, GRBVar* vars, GrafoListaAdj* grafo, SolucaoParcial* solucaoParcial, clock_t tempoInicio, int custoOtimo) {
             this->numVars = numVars;
             this->vars = vars;
             this->grafo = grafo;
+            this->solucaoParcial = solucaoParcial;
             this->tempoInicio = tempoInicio;
             this->custoOtimo = custoOtimo;
         }
@@ -173,11 +174,6 @@ class mycallback: public GRBCallback {
                 }
             }
         }
-
-    public:
-        void setSolucaoParcial(SolucaoParcial* solucaoParcial) {
-            this->solucaoParcial = solucaoParcial;
-        }
 };
 
 void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, double* mipGap, int raio) {
@@ -256,8 +252,7 @@ void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, doub
     }
     model.addConstr(sum >= solucao->size()-raio, "restrição de vizinhança");
 
-    mycallback cb = mycallback(numLabels, z, grafo, clock(), -1);
-    cb.setSolucaoParcial(nullptr);
+    mycallback cb = mycallback(numLabels, z, grafo, nullptr, clock(), -1);
     model.setCallback(&cb);
 
     model.optimize();  
@@ -843,38 +838,96 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
     return melhorSolucao;
 }
 
-vector<int>* mip(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<int>* initialSolution, GRBModel* model, mycallback *cb, double* mipGap, clock_t tempoInicio, int custoOtimo) {
+vector<int>* mip(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<int>* initialSolution, GRBEnv* env, double* mipGap, clock_t tempoInicio, int custoOtimo) {
     vector<int>* labelsSolucao; //labels in the solution
     stringstream ss;
-
-    model->reset(1);
-    GRBVar* z = model->getVars();
     
+    GRBVar* z;
+    
+    double* lb;
+    double* ub;
+    double* obj;
+    char* type;
+    string* variaveis;
+
     vector<int>* labels;
     int numLabels = grafo->arestas.size(); //number of labels on the graph
-
+        
+    GRBModel model = GRBModel(*env);
+    model.set(GRB_StringAttr_ModelName, "MLST");
+    model.set(GRB_IntParam_OutputFlag, 0);
+    model.set(GRB_DoubleParam_TimeLimit, 30); //Tempo de limite de 10h
+    model.set(GRB_DoubleParam_MIPGap, 0.05); //Termina quando o gap estiver menor que 5%
+    model.set(GRB_IntParam_LazyConstraints, 1);
+    //model.set(GRB_IntParam_MIPFocus, 1); //Foco em achar soluções viáveis
+    
+    lb = new double[numLabels];
+    ub = new double[numLabels];
+    obj = new double[numLabels];
+    type = new char[numLabels];
+    variaveis = new string[numLabels];
+    
     for(int i=0; i<numLabels; i++) {
+        ss.str("");
+        ss.clear();
+        ss << "z" << i;
         if(partialSolution->labels[i])
-            z[i].set(GRB_DoubleAttr_LB, 0.99);
+            lb[i] = 0.99;
         else
-            z[i].set(GRB_DoubleAttr_LB, 0);
+            lb[i] = 0;
+        ub[i] = 1;
+        obj[i] = 1;
+        type[i] = GRB_BINARY;
+        variaveis[i] = ss.str();
     }
     
+    z = model.addVars(lb, ub, obj, type, variaveis, numLabels);
+    GRBLinExpr sum;
+
     for(int i=0; i<numLabels; i++)
         z[i].set(GRB_DoubleAttr_Start, 0);
 
-    GRBLinExpr sum = 0;
+    sum = 0;
     for(int i=0; i<initialSolution->size(); i++) {
         z[initialSolution->at(i)].set(GRB_DoubleAttr_Start, 1);
 
         sum += z[initialSolution->at(i)];
     }
 
-    //model->addConstr(sum <= initialSolution->size()-1, "solucao final diferente da inicial");
+    model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+    model.addConstr(sum <= initialSolution->size()-1, "solucao final diferente da inicial");
     
-    cb->setSolucaoParcial(partialSolution);
+    //add the restriction about each node being present in the solution graph
+    for(int i=0; i<grafo->vertices.size(); i++) {
+        ss.str("");
+        ss.clear();
 
-    model->optimize(); 
+        ss << "corte-" << i;
+        labels = grafo->getLabelsInVertice(i); //Returns the label of all the edges that reach the node i
+        sum = 0;
+
+        for(int j=0; j<labels->size(); j++)
+            sum += z[j] * labels->at(j);
+        
+        model.addConstr(sum >= 1.0, ss.str());
+
+        delete labels;
+    }
+
+    sum = 0;
+    //GRBLinExpr sum2 = 0;
+    for(int i=0; i<numLabels; i++) {
+        sum += z[i] * grafo->numArestasLabels[i];
+        //sum2 += z[i];
+    }
+    model.addConstr(sum >= grafo->vertices.size()-1, "numero minimo de arestas");
+    //model.addConstr(sum2 >= numLabels-1, "solucao diferente da inicial");
+
+    tempoInicio = clock();
+    mycallback cb = mycallback(numLabels, z, grafo, partialSolution, tempoInicio, custoOtimo);
+    model.setCallback(&cb);
+
+    model.optimize();    
     labelsSolucao = new vector<int>;
 
     for(int i=0; i<numLabels; i++) {
@@ -885,6 +938,12 @@ vector<int>* mip(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<i
             cout << e.getErrorCode() << endl;
 
             delete labelsSolucao;
+            delete []variaveis;
+            delete []lb;
+            delete []ub;
+            delete []obj;
+            delete []type;
+
             return nullptr;
         }
     }
@@ -892,12 +951,18 @@ vector<int>* mip(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<i
     //if(labelsSolucao->size() == custoOtimo)
     //    cout << "Tempo de saída do mip: " << 1000*(float)(clock() - tempoInicio) / CLOCKS_PER_SEC << "ms" << endl << endl << endl;
 
-    *mipGap = model->get(GRB_DoubleAttr_MIPGap);
+    *mipGap = model.get(GRB_DoubleAttr_MIPGap);
+
+    delete []variaveis;
+    delete []lb;
+    delete []ub;
+    delete []obj;
+    delete []type;
 
     return labelsSolucao;
 }
 
-vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* tempoBuscaLocal, float alpha, float beta, GRBModel* model, mycallback* cb, vector<SolucaoParcial*>* parciais, clock_t tempoInicio, int custoOtimo) {
+vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* tempoBuscaLocal, float alpha, float beta, GRBEnv* env, vector<SolucaoParcial*>* parciais, clock_t tempoInicio, int custoOtimo) {
     int aleatorio;
     int numLabels;
     int totalArestas;
@@ -997,7 +1062,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
         for(int i=0; i<grafo->arestas.size(); i++)
             if(novaSolucao->labels[i])
                 count++;
-        vizinha = mip(grafo, novaSolucao, solucao, model, cb, &mipGap, tempoInicio, custoOtimo);
+        vizinha = mip(grafo, novaSolucao, solucao, env, &mipGap, tempoInicio, custoOtimo);
     } else {
         vizinha = new vector<int>;
         for(int i=0; i<numLabels; i++) {
@@ -1046,80 +1111,6 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     float beta;
     int menorCusto = initialSolution->size();
 
-    //CRIAÇÃO DO MODELO    
-    GRBVar* z;
-    
-    double* lb;
-    double* ub;
-    double* obj;
-    char* type;
-    string* variaveis;
-
-    vector<int>* labels;
-    int numLabels = grafo->arestas.size();
-
-    GRBModel model = GRBModel(*env);
-    model.set(GRB_StringAttr_ModelName, "MLST");
-    model.set(GRB_IntParam_OutputFlag, 0);
-    model.set(GRB_DoubleParam_TimeLimit, 30); //Tempo de limite de 10h
-    model.set(GRB_DoubleParam_MIPGap, 0.05); //Termina quando o gap estiver menor que 5%
-    model.set(GRB_IntParam_LazyConstraints, 1);
-    //model.set(GRB_IntParam_MIPFocus, 1); //Foco em achar soluções viáveis
-    
-    lb = new double[numLabels];
-    ub = new double[numLabels];
-    obj = new double[numLabels];
-    type = new char[numLabels];
-    variaveis = new string[numLabels];
-    
-    for(int i=0; i<numLabels; i++) {
-        ss.str("");
-        ss.clear();
-        ss << "z" << i;
-        lb[i] = 0;
-        ub[i] = 1;
-        obj[i] = 1;
-        type[i] = GRB_BINARY;
-        variaveis[i] = ss.str();
-    }
-    
-    z = model.addVars(lb, ub, obj, type, variaveis, numLabels);
-    GRBLinExpr sum;
-    
-    //add the restriction about each node being present in the solution graph
-    for(int i=0; i<grafo->vertices.size(); i++) {
-        ss.str("");
-        ss.clear();
-
-        ss << "corte-" << i;
-        labels = grafo->getLabelsInVertice(i); //Returns the label of all the edges that reach the node i
-        sum = 0;
-
-        for(int j=0; j<labels->size(); j++)
-            sum += z[j] * labels->at(j);
-        
-        model.addConstr(sum >= 1.0, ss.str());
-
-        delete labels;
-    }
-
-    sum = 0;
-    //GRBLinExpr sum2 = 0;
-    for(int i=0; i<numLabels; i++) {
-        sum += z[i] * grafo->numArestasLabels[i];
-        //sum2 += z[i];
-    }
-    model.addConstr(sum >= grafo->vertices.size()-1, "numero minimo de arestas");
-    //model.addConstr(sum2 >= numLabels-2, "numero minimo de arestas");
-    model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
-
-    tempoInicio = clock();
-    mycallback cb = mycallback(numLabels, z, grafo, tempoInicio, custoOtimo);
-    model.setCallback(&cb);
-
-    model.update();
-    //FIM CRIAÇÃO DO MODELO
-
     aux = true;
     *tempoBuscaLocal = 0;
     *numSolucoesRepetidas = 0;
@@ -1128,7 +1119,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     melhorSolucao = initialSolution;
     for(int i=0; i<numIteracoes; i++) { 
         if(*numSolucoes < numAlphas) {
-            novaSolucao = pertubacaoMIP(grafo, solucao, tempoBuscaLocal, alphas[*numSolucoes], beta, &model, &cb, parciais, tempoInicio, custoOtimo);
+            novaSolucao = pertubacaoMIP(grafo, solucao, tempoBuscaLocal, alphas[*numSolucoes], beta, env, parciais, tempoInicio, custoOtimo);
             *numSolucoes += 1;
             if(novaSolucao != nullptr) {            
                 countAlphas.push_back(1);
@@ -1145,7 +1136,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
                     break;
                 }
             }
-            novaSolucao = pertubacaoMIP(grafo, solucao, tempoBuscaLocal, alphas[indiceAlpha], beta, &model, &cb, parciais, tempoInicio, custoOtimo);
+            novaSolucao = pertubacaoMIP(grafo, solucao, tempoBuscaLocal, alphas[indiceAlpha], beta, env, parciais, tempoInicio, custoOtimo);
             *numSolucoes += 1;
             if(novaSolucao != nullptr) { 
                 countAlphas[indiceAlpha]++;
