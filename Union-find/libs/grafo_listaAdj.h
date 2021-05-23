@@ -160,6 +160,58 @@ struct GrafoListaAdj {
         return numCompConexa;
     }
 
+    int numCompConexas4(bool* labels) {
+        int numLabels = arestas.size();
+        int numVertices = vertices.size();
+
+        for(int i=0; i<numVertices; i++)
+            visitados[i] = -1;
+
+        int numCompConexa = 0;
+        int numVerticesVisitados = 0;
+        queue<int> proximos;
+        Aresta* aux;
+
+        proximos.push(vertices[0]->id);
+        while(numVerticesVisitados != numVertices) {
+            numCompConexa += 1;
+            visitados[proximos.front()] = numCompConexa-1;
+            numVerticesVisitados++;
+            
+            if(numVerticesVisitados == numVertices) 
+                return numCompConexa;
+            
+            while(!proximos.empty()) {
+                for(int i=0; i<numLabels; i++) {
+                    if(labels[i]) {
+                        aux = vertices[proximos.front()]->arestas[i];
+                        while(aux != nullptr) {
+                            if(visitados[aux->destino] == -1) {
+                                numVerticesVisitados++;
+                                visitados[aux->destino] = numCompConexa-1;
+                                proximos.push(aux->destino);
+                                if(numVerticesVisitados == numVertices) 
+                                    return numCompConexa;
+                                
+                            }
+                            aux = aux->prox;
+                        }
+                    }
+                }
+                proximos.pop();
+            }
+            
+            for(int i=0; i<numVertices; i++) {
+                if(visitados[i] == -1) {
+                    proximos.push(vertices[i]->id);
+                    break;
+                }
+            }
+        }
+        
+        return numCompConexa;
+    }
+
     SolucaoParcial* numCompConexas2(bool* labels) {
         int numLabels = arestas.size();
         int numVertices = vertices.size();

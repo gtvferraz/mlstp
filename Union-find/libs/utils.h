@@ -13,6 +13,8 @@ struct AuxiliaOrdenacao {
         this->numCompConexas = numCompConexas;
         this->posLabel = posLabel;
     }
+
+    AuxiliaOrdenacao() {}
 };
 
 struct SolucaoParcial {
@@ -47,6 +49,11 @@ bool solucoesIguais(vector<int>* solucao1, vector<int>* solucao2) {
     }
     
     return true;
+}
+
+void copiaVetor(bool* origem, bool* destino, int tamanho) {
+    for(int i=0; i<tamanho; i++)
+        destino[i] = origem[i];
 }
 
 #endif
