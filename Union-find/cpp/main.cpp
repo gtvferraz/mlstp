@@ -362,58 +362,33 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
     int count;
 
     vector<AuxiliaOrdenacao*>* listaAtual;
-    bool usados[numLabels];
-    for(int i=0; i<numLabels; i++)
-        usados[i] = false;
 
     int storeCompConexas;
     int indice;
-    AuxiliaOrdenacao* salva;
     if(iteracao > 2) {
         aleatorio = rand() % numLabels;
         solucao->push_back(aleatorio);
-        usados[aleatorio] = true;
         //if(iteracao < 5)
         //    cout << "Escolhido inicial: " << aleatorio << endl;
         for(int i=0; i<numLabels; i++) {
             if(listaOrdenadaInicial->at(i)->posLabel == aleatorio) {
                 indice = i;
                 storeCompConexas = listaOrdenadaInicial->at(i)->numCompConexas;
-                //listaOrdenadaInicial->at(i)->numCompConexas = INT_MAX;
-                salva = listaOrdenadaInicial->at(i);
-                listaOrdenadaInicial->erase(listaOrdenadaInicial->begin()+i);
-
-                count = 0;
-                solucao->push_back(0);
-                for(int i=0; i<numLabels; i++) {
-                    //if(listaOrdenada->at(i)->numCompConexas != INT_MAX) {
-                        //solucao->back() = listaOrdenada->at(i)->posLabel;
-                    if(!usados[i]) {
-                        solucao->back() = i;
-                        listaOrdenadaInicial->at(count)->numCompConexas = grafo->numCompConexas(solucao);
-                        listaOrdenadaInicial->at(count)->posLabel = i;
-                        count++;
-                    }
-                }
+                listaOrdenadaInicial->at(i)->numCompConexas = INT_MAX;
 
                 for(int j=0; j<numLabels; j++)
-                    //if(listaOrdenadaInicial->at(i)->posLabel == listaOrdenada->at(j)->posLabel) {
-                    if(aleatorio == listaOrdenada->at(j)->posLabel) { 
-                        //listaOrdenada->at(j)->numCompConexas = INT_MAX;
-                        //break;
-                        delete listaOrdenada->at(j);
-                        listaOrdenada->erase(listaOrdenada->begin()+j);
+                    if(listaOrdenadaInicial->at(i)->posLabel == listaOrdenada->at(j)->posLabel) {
+                        listaOrdenada->at(j)->numCompConexas = INT_MAX;
                         break;
                     }
                 
                 break;
             }
         }
-        sort(listaOrdenadaInicial->begin(), listaOrdenadaInicial->end(), compara_sort_b);  
-    } else
-        solucao->push_back(0);
+    }
+
     listaAtual = listaOrdenadaInicial;
-    //solucao->push_back(0);
+    solucao->push_back(0);
     bool first = true;
     /*if(iteracao < 5) {
         cout << "Depois do sort: " << endl;
@@ -433,9 +408,8 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
         aleatorio = rand() % count;
         while(listaAtual->at(aleatorio)->numCompConexas == INT_MAX)
             aleatorio = (aleatorio+1)%numLabels;
-        //aleatorio = rand() % (int)ceil(listaAtual.size()*(alpha-1));
+
         solucao->back() = listaAtual->at(aleatorio)->posLabel;
-        usados[solucao->back()] = true;
         numCompConexas = listaAtual->at(aleatorio)->numCompConexas;
         //if(iteracao < 5)
         //    cout << "Escolhido: " << aleatorio << "-" << listaAtual->at(aleatorio)->posLabel << endl;
@@ -444,31 +418,23 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
             if(first) {
                 for(int i=0; i<numLabels; i++)
                     if(solucao->back() == listaOrdenada->at(i)->posLabel) {
-                        //listaOrdenada->push_back(listaOrdenada->at(i));
-                        delete listaOrdenada->at(i);
+                        listaOrdenada->push_back(listaOrdenada->at(i));
                         listaOrdenada->erase(listaOrdenada->begin()+i);
                         break;
                     }
                 first = false;
             }
             else {
-                //listaOrdenada->push_back(listaOrdenada->at(aleatorio));
-                delete listaOrdenada->at(aleatorio);
+                listaOrdenada->push_back(listaOrdenada->at(aleatorio));
                 listaOrdenada->erase(listaOrdenada->begin()+aleatorio);
             }
 
-            //listaOrdenada->back()->numCompConexas = INT_MAX;
+            listaOrdenada->back()->numCompConexas = INT_MAX;
             solucao->push_back(0);
-            //for(int i=0; i<numLabels; i++) {
-            count = 0;
             for(int i=0; i<numLabels; i++) {
-                //if(listaOrdenada->at(i)->numCompConexas != INT_MAX) {
-                    //solucao->back() = listaOrdenada->at(i)->posLabel;
-                if(!usados[i]) {
-                    solucao->back() = i;
-                    listaOrdenada->at(count)->numCompConexas = grafo->numCompConexas(solucao);
-                    listaOrdenada->at(count)->posLabel = i;
-                    count++;
+                if(listaOrdenada->at(i)->numCompConexas != INT_MAX) {
+                    solucao->back() = listaOrdenada->at(i)->posLabel;
+                    listaOrdenada->at(i)->numCompConexas = grafo->numCompConexas(solucao);
                 }
             }
             /*if(iteracao < 5) {
@@ -489,27 +455,12 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
         
     }while(numCompConexas > 1);
     //cout << "FIM: " << solucao->size() << endl;
-    /*if(iteracao > 2)
-        listaOrdenadaInicial->at(indice)->numCompConexas = storeCompConexas;*/
+    if(iteracao > 2)
+        listaOrdenadaInicial->at(indice)->numCompConexas = storeCompConexas;
 
-    /*for(int i=numLabels-1; i>numLabels-solucao->size(); i--) {
+    for(int i=numLabels-1; i>numLabels-solucao->size(); i--) {
         listaOrdenada->at(i)->numCompConexas = 0;
         //cout << i << " ";
-    }*/
-
-    for(int j=0; j<solucao->size()-1; j++) {
-        listaOrdenada->push_back(new AuxiliaOrdenacao(0, solucao->at(j)));
-    }
-
-    if(iteracao > 2) {
-        AuxiliaOrdenacao* aux;
-        for(int i=indice; i<numLabels-1; i++) {
-            aux = listaOrdenadaInicial->at(i);
-            listaOrdenadaInicial->at(i) = salva;
-            salva = aux;
-        }
-        listaOrdenadaInicial->push_back(salva);
-        
     }
     //cout << endl;
 
