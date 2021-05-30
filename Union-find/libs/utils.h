@@ -13,6 +13,8 @@ struct AuxiliaOrdenacao {
         this->numCompConexas = numCompConexas;
         this->posLabel = posLabel;
     }
+
+    AuxiliaOrdenacao(){}
 };
 
 struct SolucaoParcial {
