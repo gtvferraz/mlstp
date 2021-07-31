@@ -9,12 +9,14 @@
 using namespace std;
 
 struct Aresta {
+    int id;
     int label;
     int origem;
     int destino;
     Aresta* prox;
 
-    Aresta(int x, int y, int label) {
+    Aresta(int x, int y, int label, int id) {
+        this->id = id;
         this->origem = x;
         this->destino = y;
         this->label = label;
@@ -49,8 +51,10 @@ struct GrafoListaAdj {
     vector<Aresta*> arestas;
     vector<int> numArestasLabels;
     vector<int> visitados;
+    int numTotalArestas;
 
     GrafoListaAdj(int numVertices, int numLabels) {
+        numTotalArestas = 0;
         for(int i=0; i<numVertices; i++)  {
             vertices.push_back(new Vertice(i, numLabels));
             visitados.push_back(-1);
@@ -73,8 +77,9 @@ struct GrafoListaAdj {
 
     void addAresta(int x, int y, int label) {
         Aresta* aux;
+        int mapArco = 2*(numTotalArestas-1)+2;
 
-        Aresta* newArestaX = new Aresta(x, y, label);
+        Aresta* newArestaX = new Aresta(x, y, label, mapArco);
         aux = vertices[x]->arestas[label];
         if(aux == nullptr)
             vertices[x]->arestas[label] = newArestaX;
@@ -85,7 +90,7 @@ struct GrafoListaAdj {
             aux->prox = newArestaX;
         }
 
-        Aresta* newArestaY = new Aresta(y, x, label);
+        Aresta* newArestaY = new Aresta(y, x, label, mapArco+1);
         aux = vertices[y]->arestas[label];
         if(aux == nullptr)
             vertices[y]->arestas[label] = newArestaY;
@@ -96,7 +101,7 @@ struct GrafoListaAdj {
             aux->prox = newArestaY;
         }
 
-        Aresta* newArestaLabel = new Aresta(x, y, label);
+        Aresta* newArestaLabel = new Aresta(x, y, label, mapArco);
         aux = arestas[label];
         if(aux == nullptr)
             arestas[label] = newArestaLabel;
@@ -108,6 +113,7 @@ struct GrafoListaAdj {
         }
 
         numArestasLabels[label] += 1;
+        numTotalArestas++;
     }
 
     int numCompConexas(vector<int>* labels) {

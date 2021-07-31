@@ -28,6 +28,12 @@ struct SolucaoParcial {
     }
 };
 
+struct ContabilizaArestas {
+    int v1;
+    int v2;
+    int count;
+};
+
 bool compara_sort_b(AuxiliaOrdenacao* a, AuxiliaOrdenacao* b) {
     return (a->numCompConexas < b->numCompConexas);
 }
@@ -49,6 +55,12 @@ bool solucoesIguais(vector<int>* solucao1, vector<int>* solucao2) {
     }
     
     return true;
+}
+
+void printSolution(vector<int>* solucao) {
+    for(int i=0; i<solucao->size(); i++)
+        cout << solucao->at(i) << " ";
+    cout << endl;
 }
 
 #endif

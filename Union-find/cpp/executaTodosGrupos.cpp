@@ -25,6 +25,8 @@ using namespace std;
 // ./executaTodosGrupos.out 4 2 50 0.8 12 10 0 0
 // ./executaTodosGrupos.out 5 1 20 0.8 12 0 0 10 1000
 // ./executaTodosGrupos.out 5 2 50 0.8 12 0 0 10 1000
+// ./executaTodosGrupos.out 6 1 20 0.8 12 0
+// ./executaTodosGrupos.out 6 2 50 0.8 12 0
 
 int main(int argc, char** argv) {
     FILE* file;
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
     float auxD[3] = {0.8, 0.5, 0.2};
 
     if(argc < 2) {
-        cout << "Parametro necessario:metodo(0 - Reativo, 1 - GRASP, 2 - MIP)" << endl;
+        cout << "Parametro necessario:metodo(0 - Reativo, 1 - GRASP, 2 - MIP, 4 - SA, 5 - IG, 6 - Análise do Dataset)" << endl;
         return 0;
     }
     metodo = stoi(argv[1]);
@@ -98,6 +100,11 @@ int main(int argc, char** argv) {
         }
         numExecucoes = atoi(argv[8]);
         numIteracoes = atoi(argv[9]);
+    } else if(metodo == 6) {
+        if(argc < 7) {
+            cout << "Parametros necessarios: grupo, numero de vertices, densidade, numero de labels, instancia" << endl;
+            return 0;
+        }
     }
 
     grupo = atoi(argv[2]);
@@ -105,7 +112,9 @@ int main(int argc, char** argv) {
     densidade = atof(argv[4]);
     numLabels = atoi(argv[5]);
     instancia = atoi(argv[6]);
-    seed = atoi(argv[7]);
+    if(metodo != 6) {
+        seed = atoi(argv[7]);
+    }
  
     if(densidade == (float)0.8) densidade = 0;
     else if(densidade == (float)0.5) densidade = 1;
@@ -125,6 +134,8 @@ int main(int argc, char** argv) {
             pathSaida = "saidasGRASPReativo/instances/g1/";
         else if(metodo == 5)
             pathSaida = "saidasIG/instances/g1/";
+        else if(metodo == 6)
+            pathSaida = "saidasAnalise/";
         for(int i=0; i<4; i++)
             if(n[i] == numVertices) {
                 numVertices = i;
@@ -148,7 +159,10 @@ int main(int argc, char** argv) {
             fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
         } else if(metodo == 5) {
             file = fopen("saidasIG/saidaGrupo1.csv", "w+");
-            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
+            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio MIP(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Tentativa Média com Melhora;Tentativa Mínima com Melhora;Tentativa Máxima com Melhora;Número de Soluções Média do IG;Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
+        } else if(metodo == 6) {
+            file = fopen("saidasAnalise/saidaGrupo1.csv", "w+");
+            fputs("Instância;Número de Arestas;Média de Arestas por Rótulos;Desvio Padrão de Arestas por Rótulos;Mínimo de Arestas por Rótulos;Máximo de Arestas por Rótulos;Número de Vértices com Grau 1;Média do Grau dos Vértices;Desvio Padrão do Grau dos Vértices;Grau Mínimo dos Vértices;Grau Máximo dos Vértices", file);
         }
         fclose(file);
 
@@ -170,59 +184,66 @@ int main(int argc, char** argv) {
                     ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " "  << tempoLimiteGraspSA[0] << " ";
                 else if(metodo == 5)
                     ss << numExecucoes << " " << numIteracoes << " " << tempoLimiteGraspSA[0] << " ";
+                else if(metodo == 6) {
+                    ss.str("");
+                    ss.clear();
+                    ss << "./mediaGrupo.out " << metodo << " " << path << n[i] << "/" << d[j] << " " << "saidasAnalise/saidaGrupo1.csv" << " ";
+                }
                 
                 ss << instancia;
-                if(metodo != 2)
+                if(metodo != 2 && metodo != 6)
                     ss << " " << seed;
 
                 int unusedIntReturn;
                 unusedIntReturn = system(ss.str().c_str());
 
-                ss.str("");
-                ss.clear();
-                ss << grupo << " " << n[i] << " " << auxD[j];
+                if(metodo != 6) {
+                    ss.str("");
+                    ss.clear();
+                    ss << grupo << " " << n[i] << " " << auxD[j];
 
-                if(metodo == 0)
-                    file = fopen("saidasReativo/log.txt", "w+");
-                else if(metodo == 1)
-                    file = fopen("saidasGRASP/log.txt", "w+");
-                else if(metodo == 2)
-                    file = fopen("saidasMIP/log.txt", "w+");
-                else if(metodo == 3)
-                    file = fopen("saidasSA/log.txt", "w+");
-                else if(metodo == 4)
-                    file = fopen("saidasGRASPReativo/log.txt", "w+");
-                else if(metodo == 5)
-                    file = fopen("saidasIG/log.txt", "w+");
-                fputs(ss.str().c_str(), file);
-                fclose(file);
+                    if(metodo == 0)
+                        file = fopen("saidasReativo/log.txt", "w+");
+                    else if(metodo == 1)
+                        file = fopen("saidasGRASP/log.txt", "w+");
+                    else if(metodo == 2)
+                        file = fopen("saidasMIP/log.txt", "w+");
+                    else if(metodo == 3)
+                        file = fopen("saidasSA/log.txt", "w+");
+                    else if(metodo == 4)
+                        file = fopen("saidasGRASPReativo/log.txt", "w+");
+                    else if(metodo == 5)
+                        file = fopen("saidasIG/log.txt", "w+");
+                    fputs(ss.str().c_str(), file);
+                    fclose(file);
 
-                ss.str("");
-                ss.clear();
-                ss << pathSaida << n[i] << "/" << d[j] << "/mediaGrupo.txt";
-                file = fopen(ss.str().c_str(), "r");
-                char* unusedReturn = fgets(auxLinha, 300, file);
-                linha = auxLinha;
-                fclose(file);
+                    ss.str("");
+                    ss.clear();
+                    ss << pathSaida << n[i] << "/" << d[j] << "/mediaGrupo.txt";
+                    file = fopen(ss.str().c_str(), "r");
+                    char* unusedReturn = fgets(auxLinha, 300, file);
+                    linha = auxLinha;
+                    fclose(file);
 
-                ss.str("");
-                ss.clear();
-                ss << n[i] << "-" << auxD[j] << ";" << linha << "\n";
+                    ss.str("");
+                    ss.clear();
+                    ss << n[i] << "-" << auxD[j] << ";" << linha << "\n";
 
-                if(metodo == 0)
-                    file = fopen("saidasReativo/saidaGrupo1.csv", "a");
-                else if(metodo == 1)
-                    file = fopen("saidasGRASP/saidaGrupo1.csv", "a");
-                else if(metodo == 2)
-                    file = fopen("saidasMIP/saidaGrupo1.csv", "a");
-                else if(metodo == 3)
-                    file = fopen("saidasSA/saidaGrupo1.csv", "a");
-                else if(metodo == 4)
-                    file = fopen("saidasGRASPReativo/saidaGrupo1.csv", "a");
-                else if(metodo == 5)
-                    file = fopen("saidasIG/saidaGrupo1.csv", "a");
-                fputs(ss.str().c_str(), file);
-                fclose(file);
+                    if(metodo == 0)
+                        file = fopen("saidasReativo/saidaGrupo1.csv", "a");
+                    else if(metodo == 1)
+                        file = fopen("saidasGRASP/saidaGrupo1.csv", "a");
+                    else if(metodo == 2)
+                        file = fopen("saidasMIP/saidaGrupo1.csv", "a");
+                    else if(metodo == 3)
+                        file = fopen("saidasSA/saidaGrupo1.csv", "a");
+                    else if(metodo == 4)
+                        file = fopen("saidasGRASPReativo/saidaGrupo1.csv", "a");
+                    else if(metodo == 5)
+                        file = fopen("saidasIG/saidaGrupo1.csv", "a");
+                    fputs(ss.str().c_str(), file);
+                    fclose(file);
+                }
 
                 instancia = 0;
                 seed = 0;
@@ -243,6 +264,8 @@ int main(int argc, char** argv) {
             pathSaida = "saidasGRASPReativo/instances/g2/";
         else if(metodo == 5)
             pathSaida = "saidasIG/instances/g2/";
+        else if(metodo == 6)
+            pathSaida = "saidasAnalise/";
         for(int i=0; i<6; i++)
             if(n2[i] == numVertices) {
                 numVertices = i;
@@ -271,7 +294,10 @@ int main(int argc, char** argv) {
             fputs("Instância;Custo Médio Após SA;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do SA;Número de Soluções Repetidas do SA;Número de Soluções Parciais Repetidas\n", file);
         } else if(metodo == 5) {
             file = fopen("saidasIG/saidaGrupo2.csv", "w+");
-            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio BL(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
+            fputs("Instância;Custo Médio Após IG;Custo Médio;Tempo Médio da Solução Inicial(ms);Tempo Médio Total(ms);Tempo Médio Construtivo(ms);Tempo Médio MIP(ms);Tempo Médio(ms);Tempo Limite do GRASP(ms);Semente;Menor Custo Médio;Tempo Médio do Menor Custo Médio(ms);Tentativa Média com Melhora;Tentativa Mínima com Melhora;Tentativa Máxima com Melhora;Número de Soluções Média do IG;Número de Soluções do GRASP;Número de Soluções Repetidas do GRASP;Número de Soluções do IG;Número de Soluções Repetidas do IG;Número de Soluções Parciais Repetidas\n", file);
+        } else if(metodo == 6) {
+            file = fopen("saidasAnalise/saidaGrupo2.csv", "w+");
+            fputs("Instância;Número de Arestas;Média de Arestas por Rótulos;Desvio Padrão de Arestas por Rótulos;Mínimo de Arestas por Rótulos;Máximo de Arestas por Rótulos;Número de Vértices com Grau 1;Média do Grau dos Vértices;Desvio Padrão do Grau dos Vértices;Grau Mínimo dos Vértices;Grau Máximo dos Vértices", file);
         }
         fclose(file);
 
@@ -297,60 +323,66 @@ int main(int argc, char** argv) {
                         ss << numExecucoes << " " << numIteracoes << " " << taxaDecaimento << " " << tempInicial << " " << tempFinal << " " << tempoLimiteGraspSA[i] << " "; 
                     else if(metodo == 5)
                         ss << numExecucoes << " " << numIteracoes << " " << tempoLimiteGraspSA[i] << " "; 
+                    else if(metodo == 6) {
+                        ss.str("");
+                        ss << "./mediaGrupo.out " << metodo << " " << path << n2[i] << "/" << d[j] << "/" << label[i][k] << " " << "saidasAnalise/saidaGrupo2.csv" << " ";
+                    }
 
                     ss << instancia;
-                    if(metodo != 2)
+                    if(metodo != 2 && metodo != 6)
                         ss << " " << seed;
 
                     int unusedIntReturn;
                     unusedIntReturn = system(ss.str().c_str());
 
-                    ss.str("");
-                    ss.clear();
-                    ss << grupo << " " << n2[i] << " " << auxD[j] << " " << label[i][k];
+                    if(metodo != 6) {
+                        ss.str("");
+                        ss.clear();
+                        ss << grupo << " " << n2[i] << " " << auxD[j] << " " << label[i][k];
+                        
+                        if(metodo == 0)
+                            file = fopen("saidasReativo/log.txt", "w+");
+                        else if(metodo == 1)
+                            file = fopen("saidasGRASP/log.txt", "w+");
+                        else if(metodo == 2)
+                            file = fopen("saidasMIP/log.txt", "w+");
+                        else if(metodo == 3)
+                            file = fopen("saidasSA/log.txt", "w+");
+                        else if(metodo == 4)
+                            file = fopen("saidasGRASPReativo/log.txt", "w+");
+                        else if(metodo == 5)
+                            file = fopen("saidasIG/log.txt", "w+");
+                        fputs(ss.str().c_str(), file);
+                        fclose(file);
                     
-                    if(metodo == 0)
-                        file = fopen("saidasReativo/log.txt", "w+");
-                    else if(metodo == 1)
-                        file = fopen("saidasGRASP/log.txt", "w+");
-                    else if(metodo == 2)
-                        file = fopen("saidasMIP/log.txt", "w+");
-                    else if(metodo == 3)
-                        file = fopen("saidasSA/log.txt", "w+");
-                    else if(metodo == 4)
-                        file = fopen("saidasGRASPReativo/log.txt", "w+");
-                    else if(metodo == 5)
-                        file = fopen("saidasIG/log.txt", "w+");
-                    fputs(ss.str().c_str(), file);
-                    fclose(file);
-                 
-                    ss.str("");
-                    ss.clear();
-                    
-                    ss << pathSaida << n2[i] << "/" << d[j] << "/" << label[i][k] << "/mediaGrupo.txt";
-                    file = fopen(ss.str().c_str(), "r");
-                    char* unusedReturn = fgets(auxLinha, 300, file);
-                    linha = auxLinha;
-                    fclose(file);
-                    
-                    ss.str("");
-                    ss.clear();
-                    ss << n2[i] << "-" << auxD[j] << "-" << label[i][k] << ";" << linha << "\n";
-                    
-                    if(metodo == 0)
-                        file = fopen("saidasReativo/saidaGrupo2.csv", "a");
-                    else if(metodo == 1)
-                        file = fopen("saidasGRASP/saidaGrupo2.csv", "a");
-                    else if(metodo == 2)
-                        file = fopen("saidasMIP/saidaGrupo2.csv", "a");
-                    else if(metodo == 3)
-                        file = fopen("saidasSA/saidaGrupo2.csv", "a");
-                    else if(metodo == 4)
-                        file = fopen("saidasGRASPReativo/saidaGrupo2.csv", "a");
-                    else if(metodo == 5)
-                        file = fopen("saidasIG/saidaGrupo2.csv", "a");
-                    fputs(ss.str().c_str(), file);
-                    fclose(file);   
+                        ss.str("");
+                        ss.clear();
+                        
+                        ss << pathSaida << n2[i] << "/" << d[j] << "/" << label[i][k] << "/mediaGrupo.txt";
+                        file = fopen(ss.str().c_str(), "r");
+                        char* unusedReturn = fgets(auxLinha, 300, file);
+                        linha = auxLinha;
+                        fclose(file);
+                        
+                        ss.str("");
+                        ss.clear();
+                        ss << n2[i] << "-" << auxD[j] << "-" << label[i][k] << ";" << linha << "\n";
+                        
+                        if(metodo == 0)
+                            file = fopen("saidasReativo/saidaGrupo2.csv", "a");
+                        else if(metodo == 1)
+                            file = fopen("saidasGRASP/saidaGrupo2.csv", "a");
+                        else if(metodo == 2)
+                            file = fopen("saidasMIP/saidaGrupo2.csv", "a");
+                        else if(metodo == 3)
+                            file = fopen("saidasSA/saidaGrupo2.csv", "a");
+                        else if(metodo == 4)
+                            file = fopen("saidasGRASPReativo/saidaGrupo2.csv", "a");
+                        else if(metodo == 5)
+                            file = fopen("saidasIG/saidaGrupo2.csv", "a");
+                        fputs(ss.str().c_str(), file);
+                        fclose(file);   
+                    }
 
                     instancia = 0;
                     seed = 0;

@@ -49,6 +49,18 @@
         "optional": "cpp",
         "string_view": "cpp",
         "deque": "cpp",
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "chrono": "cpp",
+        "atomic": "cpp",
+        "bit": "cpp",
+        "clocale": "cpp",
+        "cstdarg": "cpp",
+        "ctime": "cpp",
+        "cwctype": "cpp",
+        "iterator": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "ratio": "cpp",
+        "cinttypes": "cpp"
     }
 }

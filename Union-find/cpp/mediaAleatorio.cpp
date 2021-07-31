@@ -9,7 +9,7 @@ using namespace std;
 #define NUMDADOSREATIVO 9
 #define NUMDADOSGRASP 11
 #define NUMDADOSSA 14
-#define NUMDADOSIG 14
+#define NUMDADOSIG 17
 
 // g++ cpp/mediaAleatorio.cpp -O3 -o mediaAleatorio.out
 // ./mediaAleatorio.out 0 dataset/instances/g2/50/hd/50/0.txt 10 200 50 0
@@ -282,9 +282,11 @@ void calculaMediaIG(string entrada) {
     char linha[300];
     int firstSeed;
     int i = 0;
+    int countMelhoras = 0;
+    int countUsoIG = 0;
     int numMenorCusto = 0;
     int menorCusto = INT_MAX;
-    int numSolucoesSA = 0;
+    int numSolucoesIG = 0;
     int numSolucoesGrasp = 0;
     int numSolucoesRepetidasIG = 0;
     int numSolucoesRepetidasGrasp = 0;
@@ -295,9 +297,13 @@ void calculaMediaIG(string entrada) {
     float mediaTempo = 0;
     float mediaTempoMenorCusto = 0;
     float mediaTempoSolucaoInicial = 0;
-    float mediaTempoBuscaLocal = 0;
+    float mediaTempoMip = 0;
     float mediaTempoConstrutivo = 0;
     float mediaTempoTotal = 0;
+    float mediaItMelhora = 0;
+    float minItMelhora = INT_MAX;
+    float maxItMelhora = 0;
+    float mediaNumSolIG = 0;
     float dados[NUMDADOSIG];
 
     char* unusedReturn;
@@ -327,13 +333,25 @@ void calculaMediaIG(string entrada) {
         mediaTempoSolucaoInicial += dados[2];
         mediaTempoTotal += dados[3];
         mediaTempoConstrutivo += dados[4];
-        mediaTempoBuscaLocal += dados[5];
+        mediaTempoMip += dados[5];
         mediaTempo += dados[6];
-        numSolucoesGrasp += dados[8];
-        numSolucoesRepetidasGrasp += dados[9];
-        numSolucoesSA += dados[10];
-        numSolucoesRepetidasIG += dados[11];
-        numRepeticoesParciais += dados[12];
+        if(dados[8] != 0) {
+            mediaItMelhora += dados[8];
+            countMelhoras++;
+        }
+        if(dados[9] != 0 && dados[9] < minItMelhora) {
+            minItMelhora = dados[9];
+        }
+        if(dados[10] > maxItMelhora) {
+            maxItMelhora = dados[9];
+        }
+        numSolucoesGrasp += dados[11];
+        if(dados[13] != 0)
+            countUsoIG++;
+        numSolucoesRepetidasGrasp += dados[12];
+        numSolucoesIG += dados[13];
+        numSolucoesRepetidasIG += dados[14];
+        numRepeticoesParciais += dados[15];
 
         i++;
     }
@@ -342,9 +360,16 @@ void calculaMediaIG(string entrada) {
     mediaConstrutivo /= i;
     mediaTempoSolucaoInicial /= i;
     mediaTempoTotal /= i;
-    mediaTempoBuscaLocal /= i;
+    mediaTempoMip /= i;
     mediaTempoConstrutivo /= i;
     mediaTempo /= i;
+    if(countUsoIG > 0)
+        mediaNumSolIG = numSolucoesIG/countUsoIG;
+    if(countMelhoras > 0)
+        mediaItMelhora /= countMelhoras;
+    else {
+        minItMelhora = 0;
+    }
     mediaTempoMenorCusto /= numMenorCusto;
 
     fclose(file);
@@ -353,7 +378,7 @@ void calculaMediaIG(string entrada) {
     stringstream ss;
     ss.str("");
     ss.clear();
-    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoBuscaLocal << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasIG << ";" << numRepeticoesParciais;
+    ss << "\n" << mediaCusto << ";" << mediaConstrutivo << ";" << mediaTempoSolucaoInicial << ";" << mediaTempoTotal << ";" << mediaTempoConstrutivo << ";" << mediaTempoMip << ";" << mediaTempo << ";" << tempoLimite << ";" << firstSeed << ";" << menorCusto << ";" << mediaTempoMenorCusto << ";" << mediaItMelhora << ";" << minItMelhora << ";" << maxItMelhora << ";" << mediaNumSolIG << ";" << numSolucoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesIG << ";" << numSolucoesRepetidasIG << ";" << numRepeticoesParciais;
     fputs(ss.str().c_str(), file);
 
     fclose(file);
