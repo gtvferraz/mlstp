@@ -71,7 +71,7 @@ class mycallback: public GRBCallback {
                     double* z = getSolution(vars, numVars);
 
                     solution = new vector<int>;
-                    for(int i=0; i<grafo->arestas.size(); i++) {
+                    for(int i=0; i<grafo->numLabels; i++) {
                         if(z[i] >= 0.99)
                             solution->push_back(i);
                     }
@@ -86,7 +86,7 @@ class mycallback: public GRBCallback {
                             ss << "corte_novo-" << i;
 
                             sum = 0;
-                            for(int j=0; j<grafo->arestas.size(); j++)
+                            for(int j=0; j<grafo->numLabels; j++)
                                 sum += vars[j] * labelsComp->at(i)->at(j);
                             addLazy(sum >= 1.0);
 
@@ -105,7 +105,7 @@ class mycallback: public GRBCallback {
                     double* z = getSolution(vars, numVars);
 
                     solution = new vector<int>;
-                    for(int i=0; i<grafo->arestas.size(); i++)
+                    for(int i=0; i<grafo->numLabels; i++)
                         if(z[i] >= 0.99 && !solucaoParcial->labels[i])
                             solution->push_back(i);
                     
@@ -120,7 +120,7 @@ class mycallback: public GRBCallback {
                             ss << "corte_novo-" << i;
 
                             sum = 0;
-                            for(int j=0; j<grafo->arestas.size(); j++)
+                            for(int j=0; j<grafo->numLabels; j++)
                                 sum += vars[j] * labelsComp->at(i)->at(j);
                             addLazy(sum >= 1.0);
 
@@ -133,7 +133,7 @@ class mycallback: public GRBCallback {
                         delete labelsComp;
                     } else {
                         int count = 0;
-                        for(int i=0; i<grafo->arestas.size(); i++)
+                        for(int i=0; i<grafo->numLabels; i++)
                             if(solucaoParcial->labels[i])
                                 count++;
                         if(count + solution->size() == 3)
@@ -172,7 +172,7 @@ class mycallback: public GRBCallback {
                         delete labelsComp;
                     } /*else {
                         int count = 0;
-                        for(int i=0; i<grafo->arestas.size(); i++)
+                        for(int i=0; i<grafo->numLabels; i++)
                             if(solucaoParcial->labels[i])
                                 count++;
                         cout << "Encontrada solução viavel: " << count << " - " << solution->size() << " - " << 1000*(float)(clock() - tempoInicio) / CLOCKS_PER_SEC << "ms" << endl;
@@ -199,7 +199,7 @@ void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, doub
 
     vector<int>* labels;
     
-    int numLabels = grafo->arestas.size(); //number of labels on the graph
+    int numLabels = grafo->numLabels; //number of labels on the graph
     GRBModel model = GRBModel(*env);
     model.set(GRB_StringAttr_ModelName, "MLST");
     model.set(GRB_IntParam_OutputFlag, 0);
@@ -236,7 +236,7 @@ void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, doub
     GRBLinExpr sum;
 
     //add the restriction about each node being present in the solution graph
-    for(int i=0; i<grafo->vertices.size(); i++) {
+    for(int i=0; i<grafo->numVertices; i++) {
         ss.str("");
         ss.clear();
 
@@ -255,7 +255,7 @@ void buscaLocalMIP(GrafoListaAdj* grafo, vector<int>* solucao, GRBEnv* env, doub
     sum = 0;
     for(int i=0; i<numLabels; i++)
         sum += z[i] * grafo->numArestasLabels[i];
-    model.addConstr(sum >= grafo->vertices.size()-1, "numero minimo de arestas");
+    model.addConstr(sum >= grafo->numVertices-1, "numero minimo de arestas");
     
     sum = 0;
     for(int i=0; i<solucao->size(); i++) {
@@ -298,8 +298,8 @@ void buscaLocalExcedente(GrafoListaAdj* grafo, vector<int>* solucao) {
 }
 
 vector<int>* auxMVCAGRASP(GrafoListaAdj* grafo, int iteracao, float alpha) { 
-    int numVertices = grafo->vertices.size();
-    int numLabels = grafo->arestas.size();
+    int numVertices = grafo->numVertices;
+    int numLabels = grafo->numLabels;
     int aleatorio;
     int numCompConexas;
     int count;
@@ -363,8 +363,8 @@ vector<int>* auxMVCAGRASP(GrafoListaAdj* grafo, int iteracao, float alpha) {
 }
 
 void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>* solucao, vector<AuxiliaOrdenacao*>* listaOrdenadaInicial, vector<AuxiliaOrdenacao*>* listaOrdenada) {  
-    int numVertices = grafo->vertices.size();
-    int numLabels = grafo->arestas.size();
+    int numVertices = grafo->numVertices;
+    int numLabels = grafo->numLabels;
     int aleatorio;
     int numCompConexas;
     int count;
@@ -589,7 +589,7 @@ vector<int>* pertubacao(GrafoListaAdj* grafo, vector<int>* solucao, float* tempo
     vector<int> espacoLabels;
     vector<int> retirados;
     
-    numLabels = grafo->arestas.size();
+    numLabels = grafo->numLabels;
     bool* solucaoParcial = new bool[numLabels];
     for(int i=0; i<numLabels; i++)
         solucaoParcial[i] = false;
@@ -966,7 +966,7 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
 vector<int>* mip(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<int>* initialSolution, GRBModel* model, GRBVar* z, mycallback* cb, double* mipGap, clock_t tempoInicio, int custoOtimo) {
     vector<int>* labelsSolucao; //labels in the solution
     
-    int numLabels = grafo->arestas.size(); //number of labels on the graph
+    int numLabels = grafo->numLabels; //number of labels on the graph
     
     model->reset(1);
     
@@ -1037,7 +1037,7 @@ GRBVar* constroiModelo(GrafoListaAdj* grafo, GRBModel* model, mycallback* cb, cl
     string* variaveis;
     stringstream ss;
 
-    int numLabels = grafo->arestas.size();
+    int numLabels = grafo->numLabels;
 
     lb = new double[numLabels];
     ub = new double[numLabels];
@@ -1064,7 +1064,7 @@ GRBVar* constroiModelo(GrafoListaAdj* grafo, GRBModel* model, mycallback* cb, cl
     
     //add the restriction about each node being present in the solution graph
     vector<int>* labels;
-    for(int i=0; i<grafo->vertices.size(); i++) {
+    for(int i=0; i<grafo->numVertices; i++) {
         ss.str("");
         ss.clear();
 
@@ -1083,7 +1083,7 @@ GRBVar* constroiModelo(GrafoListaAdj* grafo, GRBModel* model, mycallback* cb, cl
     sum = 0;
     for(int i=0; i<numLabels; i++)
         sum += z[i] * grafo->numArestasLabels[i];
-    model->addConstr(sum >= grafo->vertices.size()-1, "numero minimo de arestas");
+    model->addConstr(sum >= grafo->numVertices-1, "numero minimo de arestas");
 
     cb->inicializa(numLabels, z, grafo, tempoInicio, custoOtimo);
     model->setCallback(cb);
@@ -1100,8 +1100,8 @@ GRBVar* constroiModelo(GrafoListaAdj* grafo, GRBModel* model, mycallback* cb, cl
 vector<int>* mipFluxo(GrafoListaAdj* grafo, SolucaoParcial* partialSolution, vector<int>* initialSolution, GRBModel* model, GRBVar* z) {
     vector<int>* labelsSolucao; //labels in the solution
     
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->numLabels;
+    int numVertices = grafo->numVertices;
     int numArestas = grafo->numTotalArestas;
     int numArcos = 2*numArestas;
         
@@ -1160,8 +1160,8 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
     string* variaveisY;
     stringstream ssY;
 
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->numLabels;
+    int numVertices = grafo->numVertices;
     int numArestas = grafo->numTotalArestas;
     int numArcos = 2*numArestas;
 
@@ -1273,9 +1273,9 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
     int arcoId;
 
     Aresta* aresta;
-    for(int i=0; i<grafo->vertices[0]->arestas.size(); i++) {
-        for(int j=0; j<grafo->vertices[0]->arestas[i]->size(); j++) {
-            aresta = grafo->vertices[0]->arestas[i]->at(j);
+    for(int i=0; i<grafo->numLabels; i++) {
+        for(int j=0; j<grafo->vertices[0]->numArestasLabels[i]; j++) {
+            aresta = grafo->vertices[0]->arestas[i][j];
             sumOut += y[aresta->id];
             if(aresta->id%2 == 0) {
                 sumIn += y[aresta->id+1];
@@ -1294,9 +1294,9 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
         sumOut = 0;
         sumIn = 0;
         
-        for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
-                aresta = grafo->vertices[i]->arestas[j]->at(j);
+        for(int j=0; j<grafo->numLabels; j++) {
+            for(int k=0; k<grafo->vertices[i]->numArestasLabels[j]; k++) {
+                aresta = grafo->vertices[i]->arestas[j][k];
                 ss.str("");
                 ss << "fluxo maximo no arco " << aresta->id;
                 model->addConstr(y[aresta->id] <= (numVertices-1)*x[aresta->id], ss.str());
@@ -1345,8 +1345,8 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
     string* variaveisY;
     stringstream ssY;
 
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->numLabels;
+    int numVertices = grafo->numVertices;
     int numArestas = grafo->numTotalArestas;
     int numArcos = 2*numArestas;
 
@@ -1444,9 +1444,9 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
         for(int i=1; i<numVertices; i++) {
             sumOut = 0;
             sumIn = 0;
-            for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-                for(int l=0; l<grafo->vertices[i]->arestas[j]->size(); l++) {
-                    aresta = grafo->vertices[i]->arestas[j]->at(l);
+            for(int j=0; j<grafo->numLabels; j++) {
+                for(int l=0; l<grafo->vertices[i]->numArestasLabels[j]; l++) {
+                    aresta = grafo->vertices[i]->arestas[j][l];
                     int index = (k-1)*numArcos+aresta->id;
                     
                     if(index%2 == 0) {
@@ -1470,9 +1470,9 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
 
         sumOut = 0;
         sumIn = 0;
-        for(int j=0; j<grafo->vertices[0]->arestas.size(); j++) {
-            for(int i=0; i<grafo->vertices[0]->arestas[j]->size(); i++) {
-                aresta = grafo->vertices[0]->arestas[j]->at(i);
+        for(int j=0; j<grafo->numLabels; j++) {
+            for(int i=0; i<grafo->vertices[0]->numArestasLabels[j]; i++) {
+                aresta = grafo->vertices[0]->arestas[j][i];
                 int index = (k-1)*numArcos+aresta->id;
 
                 if(index%2 == 0) {
@@ -1513,8 +1513,8 @@ GRBVar* constroiModeloFluxo3(GrafoListaAdj* grafo, GRBModel* model) {
     string* variaveisY;
     stringstream ssY;
 
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->numLabels;
+    int numVertices = grafo->numVertices;
     int numArestas = grafo->numTotalArestas;
     int numArcos = 2*numArestas;
 
@@ -1603,9 +1603,9 @@ GRBVar* constroiModeloFluxo3(GrafoListaAdj* grafo, GRBModel* model) {
 
     for(int i=1; i<numVertices; i++) {
         sumOut = 0;
-        for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
-                aresta = grafo->vertices[i]->arestas[j]->at(k);             
+        for(int j=0; j<grafo->numLabels; j++) {
+            for(int k=0; k<grafo->vertices[i]->numArestasLabels[j]; k++) {
+                aresta = grafo->vertices[i]->arestas[j][k];             
                 sumOut += x[aresta->id];
 
                 model->addConstr(y[i] >= y[aresta->destino] + x[aresta->id] - numVertices*(1 - x[aresta->id]));
@@ -1617,9 +1617,9 @@ GRBVar* constroiModeloFluxo3(GrafoListaAdj* grafo, GRBModel* model) {
     }
 
     sumOut = 0;
-    for(int j=0; j<grafo->vertices[0]->arestas.size(); j++) {
-        for(int k=0; k<grafo->vertices[0]->arestas[j]->size(); k++) {
-            aresta = grafo->vertices[0]->arestas[j]->at(k);               
+    for(int j=0; j<grafo->numLabels; j++) {
+        for(int k=0; k<grafo->vertices[0]->numArestasLabels[j]; k++) {
+            aresta = grafo->vertices[0]->arestas[j][k];               
             sumOut += x[aresta->id];
 
             model->addConstr(z[aresta->label] >= x[aresta->id]);
@@ -1637,7 +1637,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
     int totalArestas;
     int acumulada;
     
-    numLabels = grafo->arestas.size();
+    numLabels = grafo->numLabels;
     bool* solucaoParcial = new bool[numLabels];
     
     for(int i=0; i<numLabels; i++)
@@ -1735,7 +1735,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
     if(novaSolucao->numCompConexas != 1) {
         double mipGap;
         int count = 0;
-        for(int i=0; i<grafo->arestas.size(); i++)
+        for(int i=0; i<grafo->numLabels; i++)
             if(novaSolucao->labels[i])
                 count++;
         auto start = std::chrono::high_resolution_clock::now();
@@ -1766,7 +1766,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     double mipGap;
     float acumulada;
     int aleatorio;
-    int numLabels = grafo->arestas.size();
+    int numLabels = grafo->numLabels;
 
     vector<SolucaoParcial*>* parciais = new vector<SolucaoParcial*>;
 
@@ -2095,7 +2095,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
         cout << " " << probAlphas[j];
     cout << endl;*/
     for(int i=0; i<parciais->size(); i++) {
-        /*for(int j=0; j<grafo->arestas.size(); j++)
+        /*for(int j=0; j<grafo->numLabels; j++)
             if(parciais->at(i)->labels[j])
                 cout << " " << j;
         cout << endl;*/
@@ -2182,7 +2182,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     //bool* solucaoSA;
     vector<int>* solucaoSA;
 
-    int numLabels = grafo->arestas.size();
+    int numLabels = grafo->numLabels;
 
     srand(seed);
     custoOtimo = custoSolucaoExata(entrada);
@@ -2271,7 +2271,7 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
         return;  
     } 
 
-    int numLabels = grafo->arestas.size();
+    int numLabels = grafo->numLabels;
 
     vector<int>* solucaoInicial;
     vector<int>* solucaoIG;
@@ -2349,13 +2349,13 @@ void cenarioSete(string entrada, string saida) {
         return;  
     } 
 
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->numLabels;
+    int numVertices = grafo->numVertices;
 
     vector<ContabilizaArestas> contabiliza;
     for(int i=0; i<numLabels; i++) {
-        for(int k=0; k<grafo->arestas[i]->size(); k++) {
-            Aresta* aresta = grafo->arestas[i]->at(k);      
+        for(int k=0; k<grafo->numArestasLabels[i]; k++) {
+            Aresta* aresta = grafo->arestas[i][k];      
             int indice = -1;
             for(int j=0; j<contabiliza.size(); j++) {
                 if((contabiliza[j].v1 == aresta->origem && contabiliza[j].v2 == aresta->destino) || (contabiliza[j].v1 == aresta->destino && contabiliza[j].v2 == aresta->origem)) {
@@ -2401,11 +2401,11 @@ void cenarioSete(string entrada, string saida) {
     int countGrauUm = 0;
     int countArestas;
     sum = 0;
-    for(int i=0; i<grafo->vertices.size(); i++) {
+    for(int i=0; i<grafo->numVertices; i++) {
         countArestas = 0;
-        for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
-                Aresta* aresta = grafo->vertices[i]->arestas[j]->at(k); 
+        for(int j=0; j<grafo->numLabels; j++) {
+            for(int k=0; k<grafo->vertices[i]->numArestasLabels[j]; k++) {
+                Aresta* aresta = grafo->vertices[i]->arestas[j][k]; 
                 sum++;
                 countArestas++;
             }
@@ -2423,11 +2423,11 @@ void cenarioSete(string entrada, string saida) {
     mediaGrau = sum/numVertices;
 
     sum = 0;
-    for(int i=0; i<grafo->vertices.size(); i++) {
+    for(int i=0; i<grafo->numVertices; i++) {
         countArestas = 0;
-        for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
-                Aresta* aresta = grafo->vertices[i]->arestas[j]->at(k); 
+        for(int j=0; j<grafo->numLabels; j++) {
+            for(int k=0; k<grafo->vertices[i]->numArestasLabels[j]; k++) {
+                Aresta* aresta = grafo->vertices[i]->arestas[j][k]; 
                 countArestas++;
             }
         }
@@ -2479,7 +2479,7 @@ void cenarioSete(string entrada, string saida) {
     ss.str("");
     ss.clear();
     
-    ss << "\n" << grafo->vertices.size() << "-" << densidade.str() << "-" << numLabels << "-"  << instancia.str().substr(0, 1) << ";" << contabiliza.size() << ";" << mediaArestas << ";" << (100*desvArestas)/mediaArestas << ";" << minArestas << ";" << maxArestas << ";" << countGrauUm << ";" << mediaGrau << ";" << (100*desvGrau)/mediaGrau << ";" << minGrau << ";" << maxGrau;
+    ss << "\n" << grafo->numVertices << "-" << densidade.str() << "-" << numLabels << "-"  << instancia.str().substr(0, 1) << ";" << contabiliza.size() << ";" << mediaArestas << ";" << (100*desvArestas)/mediaArestas << ";" << minArestas << ";" << maxArestas << ";" << countGrauUm << ";" << mediaGrau << ";" << (100*desvGrau)/mediaGrau << ";" << minGrau << ";" << maxGrau;
     fputs(ss.str().c_str(), file);
     
     fclose(file);

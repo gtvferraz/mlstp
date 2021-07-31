@@ -24,81 +24,117 @@ struct Aresta {
 
 struct Vertice {
     int id;
-    vector<vector<Aresta*>*> arestas;
+    int numLabels;
+    int numVertices;
+    int* numArestasLabels;
+    Aresta*** arestas;
 
-    Vertice(int id, int numLabels) {
+    Vertice(int id, int numLabels, int numVertices) {
         this->id = id;
-        for(int i=0; i<numLabels; i++)
-            arestas.push_back(new vector<Aresta*>);
+        this->numLabels = numLabels;
+        this->numVertices = numVertices;
+
+        arestas = (Aresta***) malloc(numLabels*sizeof(Aresta**));
+        numArestasLabels = (int*) malloc(numLabels*sizeof(int));
+
+        int numMaxArestas = numVertices*(numVertices-1)/2;
+        for(int i=0; i<numLabels; i++) {
+            arestas[i] = (Aresta**) malloc(numMaxArestas*sizeof(Aresta*));
+            for(int j=0; j<numMaxArestas; j++) {
+                arestas[i][j] = nullptr;
+            }
+            numArestasLabels[i] = 0;
+        }
     }
 
     ~Vertice() {
-        for(int i=0; i<arestas.size(); i++) {
-                for(int j=0; j<arestas[i]->size(); j++)
-                    if(arestas[i]->at(j) != nullptr)
-                        delete arestas[i]->at(j);
-                delete arestas[i];
+        int numMaxArestas = numVertices*(numVertices-1)/2;
+        for(int i=0; i<numLabels; i++) {
+            for(int j=0; j<numMaxArestas; j++) {
+                if(arestas[i][j] == nullptr)
+                    break;
+                    
+                delete arestas[i][j];
+            }
+            free(arestas[i]);
         }
-            
+
+        free(arestas); 
+        delete[] numArestasLabels;
     }
 };
 
 struct GrafoListaAdj {
-    vector<Vertice*> vertices;
-    vector<vector<Aresta*>*> arestas;
-    vector<int> numArestasLabels;
-    vector<int> visitados;
+    Vertice** vertices;
+    Aresta*** arestas;
+    int* numArestasLabels;
+    int* visitados;
     int numTotalArestas;
+    int numVertices;
+    int numLabels;
 
     GrafoListaAdj(int numVertices, int numLabels) {
+        this->numVertices = numVertices;
+        this->numLabels = numLabels;
         numTotalArestas = 0;
-        for(int i=0; i<numVertices; i++)  {
-            vertices.push_back(new Vertice(i, numLabels));
-            visitados.push_back(-1);
+
+        vertices = (Vertice**) malloc(numVertices*sizeof(Vertice*));
+        arestas = (Aresta***) malloc(numLabels*sizeof(Aresta**));
+        numArestasLabels = (int*) malloc(numLabels*sizeof(int));
+        visitados = (int*) malloc(numVertices*sizeof(int));
+
+        int numMaxArestas = numVertices*(numVertices-1)/2;
+        for(int i=0; i<numLabels; i++) {
+            arestas[i] = (Aresta**) malloc(numMaxArestas*sizeof(Aresta*));
+            for(int j=0; j<numMaxArestas; j++) {
+                arestas[i][j] = nullptr;
+            }
+            numArestasLabels[i] = 0;
         }
 
-        for(int i=0; i<numLabels; i++) {
-            arestas.push_back(new vector<Aresta*>);
-            numArestasLabels.push_back(0);
+        for(int i=0; i<numVertices; i++)  {
+            vertices[i] = new Vertice(i, numLabels, numVertices);
+            visitados[i] = -1;
         }
     }
 
     ~GrafoListaAdj() {
-        for(int i=0; i<arestas.size(); i++) {
-                for(int j=0; j<arestas[i]->size(); j++)
-                    if(arestas[i]->at(j) != nullptr)
-                        delete arestas[i]->at(j);
-                delete arestas[i];
+        int numMaxArestas = numVertices*(numVertices-1)/2;
+        for(int i=0; i<numLabels; i++) {
+            for(int j=0; j<numMaxArestas; j++) {
+                if(arestas[i][j] == nullptr)
+                    break;
+                delete arestas[i][j];
+            }
+            free(arestas[i]);
         }
-            
+        
+        free(arestas);
 
-        for(int i=0; i<vertices.size(); i++)
+        for(int i=0; i<numVertices; i++)
             delete vertices[i];
+        free(vertices);
     }
 
     void addAresta(int x, int y, int label) {
         int mapArco = 2*(numTotalArestas-1)+2;
 
         Aresta* newArestaX = new Aresta(x, y, label, mapArco);
-     
-        vertices[x]->arestas[label]->push_back(newArestaX);
+        vertices[x]->arestas[label][vertices[x]->numArestasLabels[label]] = newArestaX;
 
         Aresta* newArestaY = new Aresta(y, x, label, mapArco+1);
-
-        vertices[y]->arestas[label]->push_back(newArestaY);
+        vertices[y]->arestas[label][vertices[y]->numArestasLabels[label]] = newArestaY;
 
         Aresta* newArestaLabel = new Aresta(x, y, label, mapArco);
+        arestas[label][numArestasLabels[label]] = newArestaLabel;
 
-        arestas[label]->push_back(newArestaLabel);
-
-        numArestasLabels[label] += 1;
         numTotalArestas++;
+        numArestasLabels[label] += 1;
+        vertices[x]->numArestasLabels[label] += 1;
+        vertices[y]->numArestasLabels[label] += 1;
     }
 
     int numCompConexas(vector<int>* labels) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         for(int i=0; i<numVertices; i++)
             visitados[i] = -1;
 
@@ -118,8 +154,8 @@ struct GrafoListaAdj {
             
             while(!proximos.empty()) {
                 for(int i=0; i<labels->size(); i++) {
-                    for(int j=0; j<vertices[proximos.front()]->arestas[labels->at(i)]->size(); j++) {
-                        aux = vertices[proximos.front()]->arestas[labels->at(i)]->at(j);
+                    for(int j=0; j<vertices[proximos.front()]->numArestasLabels[labels->at(i)]; j++) {
+                        aux = vertices[proximos.front()]->arestas[labels->at(i)][j];
                         if(visitados[aux->destino] == -1) {
                             numVerticesVisitados++;
                             visitados[aux->destino] = numCompConexa-1;
@@ -145,9 +181,6 @@ struct GrafoListaAdj {
     }
 
     SolucaoParcial* numCompConexas2(bool* labels) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         vector<int>* compConexas = new vector<int>;
 
         for(int i=0; i<numVertices; i++)
@@ -173,10 +206,10 @@ struct GrafoListaAdj {
             }
             
             while(!proximos.empty()) {
-                for(int i=0; i<arestas.size(); i++) {
+                for(int i=0; i<numLabels; i++) {
                     if(labels[i]) {
-                        for(int j=0; j<vertices[proximos.front()]->arestas[i]->size(); j++) {
-                            aux = vertices[proximos.front()]->arestas[i]->at(j);
+                        for(int j=0; j<vertices[proximos.front()]->numArestasLabels[i]; j++) {
+                            aux = vertices[proximos.front()]->arestas[i][j];
                             if(compConexas->at(aux->destino) == -1) {
                                 numVerticesVisitados++;
                                 compConexas->at(aux->destino) = numCompConexas-1;
@@ -220,9 +253,6 @@ struct GrafoListaAdj {
     }
 
     SolucaoParcial* numCompConexas3(bool* labels) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         vector<int>* compConexas = new vector<int>;
 
         for(int i=0; i<numVertices; i++)
@@ -231,10 +261,10 @@ struct GrafoListaAdj {
         int numCompConexas = numVertices;
         Aresta* aux;
 
-        for(int i=0; i<arestas.size(); i++) {
+        for(int i=0; i<numLabels; i++) {
             if(labels[i]) {
-                for(int j=0; j<arestas[i]->size(); j++) {
-                    aux = arestas[i]->at(j);
+                for(int j=0; j<numArestasLabels[i]; j++) {
+                    aux = arestas[i][j];
                     int origemRoot = getRoot(compConexas, aux->origem);
                     int destinoRoot = getRoot(compConexas, aux->destino);
                     if(origemRoot != destinoRoot) {
@@ -262,9 +292,6 @@ struct GrafoListaAdj {
     }
 
     int numCompConexasParcial(vector<int>* labels, SolucaoParcial* solucaoParcial) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         for(int i=0; i<numVertices; i++)
             visitados[i] = solucaoParcial->compConexa->at(i);
 
@@ -274,8 +301,8 @@ struct GrafoListaAdj {
         
         int auxCompConexa;
         for(int i=0; i<labels->size(); i++) {
-            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
-                aux = arestas[labels->at(i)]->at(j);
+            for(int j=0; j<numArestasLabels[labels->at(i)]; j++) {
+                aux = arestas[labels->at(i)][j];
                 if(visitados[aux->origem] != visitados[aux->destino]) {
                     numCompConexa--;
 
@@ -295,8 +322,6 @@ struct GrafoListaAdj {
     }
 
     vector<vector<int>*>* labelsCompConexas(vector<int>* labels) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
         bool finaliza = false;
 
         vector<vector<int>*> compConexas;
@@ -319,8 +344,8 @@ struct GrafoListaAdj {
             compConexas.back()->push_back(proximos.front()->id);
             while(!proximos.empty()) {
                 for(int i=0; i<labels->size(); i++) {
-                    for(int j=0; j<proximos.front()->arestas[labels->at(i)]->size(); j++) {
-                        aux = proximos.front()->arestas[labels->at(i)]->at(j);
+                    for(int j=0; j<proximos.front()->numArestasLabels[labels->at(i)]; j++) {
+                        aux = proximos.front()->arestas[labels->at(i)][j];
                         if(visitados[aux->destino] == -1) {
                             numVerticesVisitados++;
                             visitados[aux->destino] = numCompConexas-1;
@@ -351,13 +376,13 @@ struct GrafoListaAdj {
         vector<vector<int>*>* labelsCompConexas = new vector<vector<int>*>;
         for(int i=0; i<compConexas.size(); i++) {
             labelsCompConexas->push_back(new vector<int>);
-            for(int j=0; j<arestas.size(); j++)
+            for(int j=0; j<numLabels; j++)
                 labelsCompConexas->at(i)->push_back(0);
 
             for(int j=0; j<compConexas[i]->size(); j++) {
-                for(int k=0; k<vertices[compConexas[i]->at(j)]->arestas.size(); k++) {
-                    for(int l=0; l<vertices[compConexas[i]->at(j)]->arestas[k]->size(); l++) {
-                        aux = vertices[compConexas[i]->at(j)]->arestas[k]->at(l);
+                for(int k=0; k<vertices[compConexas[i]->at(j)]->numLabels; k++) {
+                    for(int l=0; l<vertices[compConexas[i]->at(j)]->numArestasLabels[k]; l++) {
+                        aux = vertices[compConexas[i]->at(j)]->arestas[k][l];
                         if(!taNoVetor(compConexas[i], aux->destino)) {
                             labelsCompConexas->at(i)->at(k) = 1;
                             break;
@@ -374,9 +399,6 @@ struct GrafoListaAdj {
     }
 
     vector<vector<int>*>* labelsCompConexasParcial(vector<int>* labels, SolucaoParcial* solucaoParcial) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         int numCompConexa = solucaoParcial->numCompConexas;
         int numVerticesVisitados = 0;
         Aresta* aux;
@@ -386,8 +408,8 @@ struct GrafoListaAdj {
 
         int auxCompConexa;
         for(int i=0; i<labels->size(); i++) {
-            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
-                aux = arestas[labels->at(i)]->at(j);
+            for(int j=0; j<numArestasLabels[labels->at(i)]; j++) {
+                aux = arestas[labels->at(i)][j];
                 if(visitados[aux->origem] != visitados[aux->destino]) {
                     numCompConexa--;
 
@@ -412,7 +434,7 @@ struct GrafoListaAdj {
         vector<vector<int>*>* labelsCompConexas = new vector<vector<int>*>;
         for(int i=0; i<numCompConexa; i++) {
             labelsCompConexas->push_back(new vector<int>);
-            for(int j=0; j<arestas.size(); j++)
+            for(int j=0; j<numLabels; j++)
                 labelsCompConexas->at(i)->push_back(0);
         }
 
@@ -445,9 +467,9 @@ struct GrafoListaAdj {
             }
         }
         
-        for(int i=0; i<arestas.size(); i++) {
-            for(int j=0; j<arestas[i]->size(); j++) {
-                aux = arestas[i]->at(j);
+        for(int i=0; i<numLabels; i++) {
+            for(int j=0; j<numArestasLabels[i]; j++) {
+                aux = arestas[i][j];
                 if(visitados[aux->origem] != visitados[aux->destino] || visitados[aux->origem] == -1) {
                     labelsCompConexas->at(visitados[aux->origem])->at(i) = 1;
                     labelsCompConexas->at(visitados[aux->destino])->at(i) = 1;
@@ -466,9 +488,6 @@ struct GrafoListaAdj {
     }
 
     vector<vector<int>*>* labelsCompConexasParcial2(vector<int>* labels, SolucaoParcial* solucaoParcial) {
-        int numLabels = arestas.size();
-        int numVertices = vertices.size();
-
         vector<int>* compConexas = new vector<int>;
         for(int i=0; i<numVertices; i++) 
             compConexas->push_back(solucaoParcial->compConexa->at(i));
@@ -485,8 +504,8 @@ struct GrafoListaAdj {
 
         Aresta* aux;
         for(int i=0; i<labels->size(); i++) {
-            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
-                aux = arestas[labels->at(i)]->at(j);
+            for(int j=0; j<numArestasLabels[labels->at(i)]; j++) {
+                aux = arestas[labels->at(i)][j];
                 int origemRoot = getRoot(compConexas, aux->origem);
                 int destinoRoot = getRoot(compConexas, aux->destino);
                 if(origemRoot != destinoRoot) {
@@ -504,10 +523,10 @@ struct GrafoListaAdj {
             labelsVisitados[labels->at(i)] = true;
         }
 
-        for(int i=0; i<arestas.size(); i++) {
+        for(int i=0; i<numLabels; i++) {
             if(!labelsVisitados[i]) {
-                for(int j=0; j<arestas[i]->size(); j++) {
-                    aux = arestas[i]->at(j);
+                for(int j=0; j<numArestasLabels[i]; j++) {
+                    aux = arestas[i][j];
                     int origemRoot = getRoot(compConexas, aux->origem);
                     int destinoRoot = getRoot(compConexas, aux->destino);
                     if(origemRoot != destinoRoot) {
@@ -533,7 +552,7 @@ struct GrafoListaAdj {
         vector<int>* labels = new vector<int>;
         Vertice* vertice = vertices[idVertice];
 
-        for(int i=0; i<vertice->arestas.size(); i++)
+        for(int i=0; i<vertice->numLabels; i++)
             if(vertice->arestas[i] != nullptr)
                 labels->push_back(1);
             else
@@ -544,21 +563,21 @@ struct GrafoListaAdj {
 
     void imprimeGrafo() {
         Aresta* aux;
-        for(int i=0; i<vertices.size(); i++) {
+        for(int i=0; i<numVertices; i++) {
             cout << vertices[i]->id << " - ";
-                for(int j=0; j<vertices[i]->arestas.size(); j++) {
-                    for(int k=0; k<vertices[i]->arestas[j]->size(); k++) {
-                        aux = vertices[i]->arestas[j]->at(k);
+                for(int j=0; j<vertices[i]->numLabels; j++) {
+                    for(int k=0; k<vertices[i]->numArestasLabels[j]; k++) {
+                        aux = vertices[i]->arestas[j][k];
                         cout << j << ":" << aux->destino << " ";
                     }
             }
             cout << endl;
         }
 
-        for(int i=0; i<arestas.size(); i++) {
+        for(int i=0; i<numLabels; i++) {
             cout << "Label: " << i << ": ";
-            for(int j=0; j<arestas[i]->size(); j++) {
-                aux = arestas[i]->at(j);
+            for(int j=0; j<numArestasLabels[i]; j++) {
+                aux = arestas[i][j];
                 cout << aux->origem << "-" << aux->destino << " ";
             }
             cout << endl;
