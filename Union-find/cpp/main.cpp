@@ -1750,8 +1750,8 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
             if(novaSolucao->labels[i])
                 count++;
         auto start = std::chrono::high_resolution_clock::now();
-        vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
-        //vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
+        //vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
+        vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
         auto diff = std::chrono::high_resolution_clock::now() - start;
         auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
         *tempoMip += t1.count()/1000.0;
@@ -1956,10 +1956,10 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     GRBModel model = GRBModel(*env);
     GRBVar* z;
 
-    //z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
+    z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
     //z = constroiModeloFluxo(grafo, &model);
     //z = constroiModeloFluxo2(grafo, &model);
-    z = constroiModeloFluxo3(grafo, &model);
+    //z = constroiModeloFluxo3(grafo, &model);
     auto diff = std::chrono::high_resolution_clock::now() - start;
     auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
     *tempoMip = t1.count()/1000.0;
