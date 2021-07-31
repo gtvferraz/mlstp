@@ -1274,16 +1274,14 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
 
     Aresta* aresta;
     for(int i=0; i<grafo->vertices[0]->arestas.size(); i++) {
-        aresta = grafo->vertices[0]->arestas[i];
-        while(aresta != nullptr) {
+        for(int j=0; j<grafo->vertices[0]->arestas[i]->size(); j++) {
+            aresta = grafo->vertices[0]->arestas[i]->at(j);
             sumOut += y[aresta->id];
             if(aresta->id%2 == 0) {
                 sumIn += y[aresta->id+1];
             } else {
                 sumIn += y[aresta->id-1];
             }
-
-            aresta = aresta->prox;
         }
     }
 
@@ -1297,8 +1295,8 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
         sumIn = 0;
         
         for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            aresta = grafo->vertices[i]->arestas[j];
-            while(aresta != nullptr) {
+            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
+                aresta = grafo->vertices[i]->arestas[j]->at(j);
                 ss.str("");
                 ss << "fluxo maximo no arco " << aresta->id;
                 model->addConstr(y[aresta->id] <= (numVertices-1)*x[aresta->id], ss.str());
@@ -1314,8 +1312,6 @@ GRBVar* constroiModeloFluxo(GrafoListaAdj* grafo, GRBModel* model) {
                     sumOut += y[aresta->id];
                     sumIn += y[aresta->id-1];
                 }
-
-                aresta = aresta->prox;
             }
         }
         if(i > 0) {
@@ -1449,8 +1445,8 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
             sumOut = 0;
             sumIn = 0;
             for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-                aresta = grafo->vertices[i]->arestas[j];
-                while(aresta != nullptr) {
+                for(int l=0; l<grafo->vertices[i]->arestas[j]->size(); l++) {
+                    aresta = grafo->vertices[i]->arestas[j]->at(l);
                     int index = (k-1)*numArcos+aresta->id;
                     
                     if(index%2 == 0) {
@@ -1463,8 +1459,6 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
 
                     model->addConstr(y[index] <= x[aresta->id]);
                     model->addConstr(z[aresta->label] >= x[aresta->id]);
-
-                    aresta = aresta->prox;
                 }
             }
             if(i == k) {
@@ -1477,8 +1471,8 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
         sumOut = 0;
         sumIn = 0;
         for(int j=0; j<grafo->vertices[0]->arestas.size(); j++) {
-            aresta = grafo->vertices[0]->arestas[j];
-            while(aresta != nullptr) {
+            for(int i=0; i<grafo->vertices[0]->arestas[j]->size(); i++) {
+                aresta = grafo->vertices[0]->arestas[j]->at(i);
                 int index = (k-1)*numArcos+aresta->id;
 
                 if(index%2 == 0) {
@@ -1490,8 +1484,6 @@ GRBVar* constroiModeloFluxo2(GrafoListaAdj* grafo, GRBModel* model) {
                 }
                 model->addConstr(y[index] <= x[aresta->id]);
                 model->addConstr(z[aresta->label] >= x[aresta->id]);
-
-                aresta = aresta->prox;
             }
         }
         model->addConstr(sumOut - sumIn == 1);
@@ -1612,14 +1604,13 @@ GRBVar* constroiModeloFluxo3(GrafoListaAdj* grafo, GRBModel* model) {
     for(int i=1; i<numVertices; i++) {
         sumOut = 0;
         for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            aresta = grafo->vertices[i]->arestas[j];
-            while(aresta != nullptr) {                
+            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
+                aresta = grafo->vertices[i]->arestas[j]->at(k);             
                 sumOut += x[aresta->id];
 
                 model->addConstr(y[i] >= y[aresta->destino] + x[aresta->id] - numVertices*(1 - x[aresta->id]));
                 model->addConstr(z[aresta->label] >= x[aresta->id]);
 
-                aresta = aresta->prox;
             }
         }
         model->addConstr(sumOut == 1);
@@ -1627,13 +1618,11 @@ GRBVar* constroiModeloFluxo3(GrafoListaAdj* grafo, GRBModel* model) {
 
     sumOut = 0;
     for(int j=0; j<grafo->vertices[0]->arestas.size(); j++) {
-        aresta = grafo->vertices[0]->arestas[j];
-        while(aresta != nullptr) {            
+        for(int k=0; k<grafo->vertices[0]->arestas[j]->size(); k++) {
+            aresta = grafo->vertices[0]->arestas[j]->at(k);               
             sumOut += x[aresta->id];
 
             model->addConstr(z[aresta->label] >= x[aresta->id]);
-
-            aresta = aresta->prox;
         }
     }
     model->addConstr(sumOut == 0);
@@ -1657,17 +1646,17 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
         solucaoParcial[solucao->at(i)] = true;
 
     //REMOVE 20% DOS LABELS
-    /*for(int i=0; i<max((int)ceil(solucao->size()*alpha),1); i++) { 
+    for(int i=0; i<max((int)ceil(solucao->size()*alpha),1); i++) { 
     //for(int i=0; i<alpha; i++) { 
         aleatorio = rand()%solucao->size();
         if(solucaoParcial[solucao->at(aleatorio)])
             solucaoParcial[solucao->at(aleatorio)] = false;
         else
             i--;
-    }*/
+    }
     //FIM REMOVE 20% DOS LABELS
     //REMOVE 20% DOS LABELS, ONDE QUANTO MENOS ARESTAS O LABEL POSSUI, MAIOR A CHANCE DELE SER REMOVIDO
-    totalArestas = 0;
+    /*totalArestas = 0;
     int numArestasLabels[solucao->size()];
     for(int i=0; i<solucao->size(); i++) {
         numArestasLabels[i] = round(1000.0/grafo->numArestasLabels[solucao->at(i)]);
@@ -1687,7 +1676,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
                 break;
             }
         }
-    }
+    }*/
     /*for(int i=0; i<numLabels; i++)
         solucaoParcial[i] = false;
 
@@ -1750,8 +1739,8 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
             if(novaSolucao->labels[i])
                 count++;
         auto start = std::chrono::high_resolution_clock::now();
-        vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
-        //vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
+        //vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
+        vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
         auto diff = std::chrono::high_resolution_clock::now() - start;
         auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
         *tempoMip += t1.count()/1000.0;
@@ -1956,10 +1945,10 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     GRBModel model = GRBModel(*env);
     GRBVar* z;
 
-    //z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
+    z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
     //z = constroiModeloFluxo(grafo, &model);
     //z = constroiModeloFluxo2(grafo, &model);
-    z = constroiModeloFluxo3(grafo, &model);
+    //z = constroiModeloFluxo3(grafo, &model);
     auto diff = std::chrono::high_resolution_clock::now() - start;
     auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
     *tempoMip = t1.count()/1000.0;
@@ -2365,8 +2354,8 @@ void cenarioSete(string entrada, string saida) {
 
     vector<ContabilizaArestas> contabiliza;
     for(int i=0; i<numLabels; i++) {
-        Aresta* aresta = grafo->arestas[i];
-        while(aresta != nullptr) {
+        for(int k=0; k<grafo->arestas[i]->size(); k++) {
+            Aresta* aresta = grafo->arestas[i]->at(k);      
             int indice = -1;
             for(int j=0; j<contabiliza.size(); j++) {
                 if((contabiliza[j].v1 == aresta->origem && contabiliza[j].v2 == aresta->destino) || (contabiliza[j].v1 == aresta->destino && contabiliza[j].v2 == aresta->origem)) {
@@ -2382,7 +2371,6 @@ void cenarioSete(string entrada, string saida) {
                 t.count = 1;
                 contabiliza.push_back(t);
             }
-            aresta = aresta->prox;
         }
     }
 
@@ -2416,12 +2404,10 @@ void cenarioSete(string entrada, string saida) {
     for(int i=0; i<grafo->vertices.size(); i++) {
         countArestas = 0;
         for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            Aresta* aresta = grafo->vertices[i]->arestas[j];
-
-            while(aresta != nullptr) {
+            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
+                Aresta* aresta = grafo->vertices[i]->arestas[j]->at(k); 
                 sum++;
                 countArestas++;
-                aresta = aresta->prox;
             }
         }
         if(countArestas == 1) {
@@ -2440,11 +2426,9 @@ void cenarioSete(string entrada, string saida) {
     for(int i=0; i<grafo->vertices.size(); i++) {
         countArestas = 0;
         for(int j=0; j<grafo->vertices[i]->arestas.size(); j++) {
-            Aresta* aresta = grafo->vertices[i]->arestas[j];
-
-            while(aresta != nullptr) {
+            for(int k=0; k<grafo->vertices[i]->arestas[j]->size(); k++) {
+                Aresta* aresta = grafo->vertices[i]->arestas[j]->at(k); 
                 countArestas++;
-                aresta = aresta->prox;
             }
         }
         sum += pow(countArestas - mediaGrau, 2);

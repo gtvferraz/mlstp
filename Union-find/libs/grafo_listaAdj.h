@@ -13,42 +13,39 @@ struct Aresta {
     int label;
     int origem;
     int destino;
-    Aresta* prox;
 
     Aresta(int x, int y, int label, int id) {
         this->id = id;
         this->origem = x;
         this->destino = y;
         this->label = label;
-        this->prox = nullptr;
-    }
-
-    ~Aresta() {
-        if(prox != nullptr)
-            delete prox;
     }
 };
 
 struct Vertice {
     int id;
-    vector<Aresta*> arestas;
+    vector<vector<Aresta*>*> arestas;
 
     Vertice(int id, int numLabels) {
         this->id = id;
         for(int i=0; i<numLabels; i++)
-            arestas.push_back(nullptr);
+            arestas.push_back(new vector<Aresta*>);
     }
 
     ~Vertice() {
-        for(int i=0; i<arestas.size(); i++)
-            if(arestas[i] != nullptr)
+        for(int i=0; i<arestas.size(); i++) {
+                for(int j=0; j<arestas[i]->size(); j++)
+                    if(arestas[i]->at(j) != nullptr)
+                        delete arestas[i]->at(j);
                 delete arestas[i];
+        }
+            
     }
 };
 
 struct GrafoListaAdj {
     vector<Vertice*> vertices;
-    vector<Aresta*> arestas;
+    vector<vector<Aresta*>*> arestas;
     vector<int> numArestasLabels;
     vector<int> visitados;
     int numTotalArestas;
@@ -61,56 +58,38 @@ struct GrafoListaAdj {
         }
 
         for(int i=0; i<numLabels; i++) {
-            arestas.push_back(nullptr);
+            arestas.push_back(new vector<Aresta*>);
             numArestasLabels.push_back(0);
         }
     }
 
     ~GrafoListaAdj() {
-        for(int i=0; i<arestas.size(); i++)
-            if(arestas[i] != nullptr)
+        for(int i=0; i<arestas.size(); i++) {
+                for(int j=0; j<arestas[i]->size(); j++)
+                    if(arestas[i]->at(j) != nullptr)
+                        delete arestas[i]->at(j);
                 delete arestas[i];
+        }
+            
 
         for(int i=0; i<vertices.size(); i++)
             delete vertices[i];
     }
 
     void addAresta(int x, int y, int label) {
-        Aresta* aux;
         int mapArco = 2*(numTotalArestas-1)+2;
 
         Aresta* newArestaX = new Aresta(x, y, label, mapArco);
-        aux = vertices[x]->arestas[label];
-        if(aux == nullptr)
-            vertices[x]->arestas[label] = newArestaX;
-        else {
-            while(aux->prox != nullptr) {
-                aux = aux->prox;
-            }
-            aux->prox = newArestaX;
-        }
+     
+        vertices[x]->arestas[label]->push_back(newArestaX);
 
         Aresta* newArestaY = new Aresta(y, x, label, mapArco+1);
-        aux = vertices[y]->arestas[label];
-        if(aux == nullptr)
-            vertices[y]->arestas[label] = newArestaY;
-        else {
-            while(aux->prox != nullptr) {
-                aux = aux->prox;
-            }
-            aux->prox = newArestaY;
-        }
+
+        vertices[y]->arestas[label]->push_back(newArestaY);
 
         Aresta* newArestaLabel = new Aresta(x, y, label, mapArco);
-        aux = arestas[label];
-        if(aux == nullptr)
-            arestas[label] = newArestaLabel;
-        else {
-            while(aux->prox != nullptr) {
-                aux = aux->prox;
-            }
-            aux->prox = newArestaLabel;
-        }
+
+        arestas[label]->push_back(newArestaLabel);
 
         numArestasLabels[label] += 1;
         numTotalArestas++;
@@ -126,9 +105,9 @@ struct GrafoListaAdj {
         int numCompConexa = 0;
         int numVerticesVisitados = 0;
         queue<int> proximos;
-        Aresta* aux;
 
         proximos.push(vertices[0]->id);
+        Aresta* aux;
         while(numVerticesVisitados != numVertices) {
             numCompConexa += 1;
             visitados[proximos.front()] = numCompConexa-1;
@@ -139,8 +118,8 @@ struct GrafoListaAdj {
             
             while(!proximos.empty()) {
                 for(int i=0; i<labels->size(); i++) {
-                    aux = vertices[proximos.front()]->arestas[labels->at(i)];
-                    while(aux != nullptr) {
+                    for(int j=0; j<vertices[proximos.front()]->arestas[labels->at(i)]->size(); j++) {
+                        aux = vertices[proximos.front()]->arestas[labels->at(i)]->at(j);
                         if(visitados[aux->destino] == -1) {
                             numVerticesVisitados++;
                             visitados[aux->destino] = numCompConexa-1;
@@ -149,7 +128,6 @@ struct GrafoListaAdj {
                                 return numCompConexa;
                             
                         }
-                        aux = aux->prox;
                     }
                 }
                 proximos.pop();
@@ -197,8 +175,8 @@ struct GrafoListaAdj {
             while(!proximos.empty()) {
                 for(int i=0; i<arestas.size(); i++) {
                     if(labels[i]) {
-                        aux = vertices[proximos.front()]->arestas[i];
-                        while(aux != nullptr) {
+                        for(int j=0; j<vertices[proximos.front()]->arestas[i]->size(); j++) {
+                            aux = vertices[proximos.front()]->arestas[i]->at(j);
                             if(compConexas->at(aux->destino) == -1) {
                                 numVerticesVisitados++;
                                 compConexas->at(aux->destino) = numCompConexas-1;
@@ -212,7 +190,6 @@ struct GrafoListaAdj {
                                 }
                                 
                             }
-                            aux = aux->prox;
                         }
                     }
                 }
@@ -256,8 +233,8 @@ struct GrafoListaAdj {
 
         for(int i=0; i<arestas.size(); i++) {
             if(labels[i]) {
-                aux = arestas[i];
-                while(aux != nullptr) {
+                for(int j=0; j<arestas[i]->size(); j++) {
+                    aux = arestas[i]->at(j);
                     int origemRoot = getRoot(compConexas, aux->origem);
                     int destinoRoot = getRoot(compConexas, aux->destino);
                     if(origemRoot != destinoRoot) {
@@ -272,7 +249,6 @@ struct GrafoListaAdj {
                             return solucaoParcial;
                         }
                     }
-                    aux = aux->prox;
                 }
             }
         }
@@ -298,8 +274,8 @@ struct GrafoListaAdj {
         
         int auxCompConexa;
         for(int i=0; i<labels->size(); i++) {
-            aux = arestas[labels->at(i)];
-            while(aux != nullptr) {
+            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
+                aux = arestas[labels->at(i)]->at(j);
                 if(visitados[aux->origem] != visitados[aux->destino]) {
                     numCompConexa--;
 
@@ -312,7 +288,6 @@ struct GrafoListaAdj {
                         return numCompConexa;
                     
                 }
-                aux = aux->prox;
             }
         }
         
@@ -344,8 +319,8 @@ struct GrafoListaAdj {
             compConexas.back()->push_back(proximos.front()->id);
             while(!proximos.empty()) {
                 for(int i=0; i<labels->size(); i++) {
-                    aux = proximos.front()->arestas[labels->at(i)];
-                    while(aux != nullptr) {
+                    for(int j=0; j<proximos.front()->arestas[labels->at(i)]->size(); j++) {
+                        aux = proximos.front()->arestas[labels->at(i)]->at(j);
                         if(visitados[aux->destino] == -1) {
                             numVerticesVisitados++;
                             visitados[aux->destino] = numCompConexas-1;
@@ -356,7 +331,6 @@ struct GrafoListaAdj {
                                 break;
                             }
                         }
-                        aux = aux->prox;
                     }
                     if(finaliza)
                         break;
@@ -382,13 +356,12 @@ struct GrafoListaAdj {
 
             for(int j=0; j<compConexas[i]->size(); j++) {
                 for(int k=0; k<vertices[compConexas[i]->at(j)]->arestas.size(); k++) {
-                    aux = vertices[compConexas[i]->at(j)]->arestas[k];
-                    while(aux != nullptr) {
+                    for(int l=0; l<vertices[compConexas[i]->at(j)]->arestas[k]->size(); l++) {
+                        aux = vertices[compConexas[i]->at(j)]->arestas[k]->at(l);
                         if(!taNoVetor(compConexas[i], aux->destino)) {
                             labelsCompConexas->at(i)->at(k) = 1;
                             break;
                         }
-                        aux = aux->prox;
                     }
                 }
             }
@@ -413,8 +386,8 @@ struct GrafoListaAdj {
 
         int auxCompConexa;
         for(int i=0; i<labels->size(); i++) {
-            aux = arestas[labels->at(i)];
-            while(aux != nullptr) {
+            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
+                aux = arestas[labels->at(i)]->at(j);
                 if(visitados[aux->origem] != visitados[aux->destino]) {
                     numCompConexa--;
 
@@ -433,7 +406,6 @@ struct GrafoListaAdj {
                     if(numCompConexa == 1) 
                         return nullptr;   
                 }
-                aux = aux->prox;
             }
         }
 
@@ -474,13 +446,12 @@ struct GrafoListaAdj {
         }
         
         for(int i=0; i<arestas.size(); i++) {
-            aux = arestas[i];
-            while(aux != nullptr) {
+            for(int j=0; j<arestas[i]->size(); j++) {
+                aux = arestas[i]->at(j);
                 if(visitados[aux->origem] != visitados[aux->destino] || visitados[aux->origem] == -1) {
                     labelsCompConexas->at(visitados[aux->origem])->at(i) = 1;
                     labelsCompConexas->at(visitados[aux->destino])->at(i) = 1;
                 }
-                aux = aux->prox;
             }
         }
         
@@ -514,8 +485,8 @@ struct GrafoListaAdj {
 
         Aresta* aux;
         for(int i=0; i<labels->size(); i++) {
-            aux = arestas[labels->at(i)];
-            while(aux != nullptr) {
+            for(int j=0; j<arestas[labels->at(i)]->size(); j++) {
+                aux = arestas[labels->at(i)]->at(j);
                 int origemRoot = getRoot(compConexas, aux->origem);
                 int destinoRoot = getRoot(compConexas, aux->destino);
                 if(origemRoot != destinoRoot) {
@@ -529,15 +500,14 @@ struct GrafoListaAdj {
                         return nullptr;
                     }
                 }
-                aux = aux->prox;
             }
             labelsVisitados[labels->at(i)] = true;
         }
 
         for(int i=0; i<arestas.size(); i++) {
             if(!labelsVisitados[i]) {
-                aux = arestas[i];
-                while(aux != nullptr) {
+                for(int j=0; j<arestas[i]->size(); j++) {
+                    aux = arestas[i]->at(j);
                     int origemRoot = getRoot(compConexas, aux->origem);
                     int destinoRoot = getRoot(compConexas, aux->destino);
                     if(origemRoot != destinoRoot) {
@@ -551,7 +521,6 @@ struct GrafoListaAdj {
                         else if(labelsCompConexas->at(destinoRoot)->back() != i)
                             labelsCompConexas->at(destinoRoot)->push_back(i);
                     }
-                    aux = aux->prox;
                 }
             }
         }
@@ -578,21 +547,19 @@ struct GrafoListaAdj {
         for(int i=0; i<vertices.size(); i++) {
             cout << vertices[i]->id << " - ";
                 for(int j=0; j<vertices[i]->arestas.size(); j++) {
-                    aux = vertices[i]->arestas[j];
-                    while(aux != nullptr) {
-                        cout << vertices[i]->arestas[j]->label << ":" << aux->destino << " ";
-                        aux = aux->prox;
+                    for(int k=0; k<vertices[i]->arestas[j]->size(); k++) {
+                        aux = vertices[i]->arestas[j]->at(k);
+                        cout << j << ":" << aux->destino << " ";
                     }
             }
             cout << endl;
         }
 
         for(int i=0; i<arestas.size(); i++) {
-            aux = arestas[i];
             cout << "Label: " << i << ": ";
-            while(aux != nullptr) {
+            for(int j=0; j<arestas[i]->size(); j++) {
+                aux = arestas[i]->at(j);
                 cout << aux->origem << "-" << aux->destino << " ";
-                aux = aux->prox;
             }
             cout << endl;
         }
