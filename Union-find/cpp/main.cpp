@@ -396,9 +396,7 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
 
                 for(int j=0; j<numLabels; j++)
                     if(listaOrdenadaInicial->at(i)->posLabel == listaOrdenada->at(j)->posLabel) {
-                        //listaOrdenada->at(j)->numCompConexas = INT_MAX;
-                        delete listaOrdenada->at(j);
-                        listaOrdenada->erase(listaOrdenada->begin()+j);
+                        listaOrdenada->at(j)->numCompConexas = INT_MAX;
 
                         break;
                     }
@@ -431,10 +429,8 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
         indMenor = 0;
 
         aleatorio = rand() % count;
-        if(first) {
-            while(listaAtual->at(aleatorio)->numCompConexas == INT_MAX)
-                aleatorio = (aleatorio+1)%numLabels;
-        }
+        while(listaAtual->at(aleatorio)->numCompConexas == INT_MAX)
+            aleatorio = (aleatorio+1)%numLabels;
 
         int selectedLabel = listaAtual->at(aleatorio)->posLabel;
         solucao->back() = selectedLabel;
@@ -442,7 +438,7 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
         numCompConexas = listaAtual->at(aleatorio)->numCompConexas;
 
         if(!first) {
-            for(int i=0; i<numLabels; i++) {
+            for(int i=0; i<listaAtual->size(); i++) {
                 if(i != selectedLabel && !labelsSolucao[i]) {
                     solucoesParciais[i]->numCompConexas = solucoesParciais[selectedLabel]->numCompConexas;
                     solucoesParciais[i]->compConexa->clear();
@@ -454,7 +450,7 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
         }
 
         if(numCompConexas > 1) {
-            /*if(first) {
+            if(first) {
                 for(int i=0; i<numLabels; i++)
                     if(solucao->back() == listaOrdenada->at(i)->posLabel) {
                         listaOrdenada->push_back(listaOrdenada->at(i));
@@ -468,14 +464,7 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
                 listaOrdenada->erase(listaOrdenada->begin()+aleatorio);
             }
 
-            listaOrdenada->back()->numCompConexas = INT_MAX;*/
-
-            for(int i=0; i<numLabels; i++)
-                if(solucao->back() == listaOrdenada->at(i)->posLabel) {
-                    delete listaOrdenada->at(i);
-                    listaOrdenada->erase(listaOrdenada->begin()+i);
-                    break;
-                }
+            listaOrdenada->back()->numCompConexas = INT_MAX;
 
             solucao->push_back(0);
             for(int i=0; i<listaOrdenada->size(); i++) {
@@ -506,9 +495,6 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
 
     if(iteracao > 2)
         listaOrdenadaInicial->at(indice)->numCompConexas = storeCompConexas;
-
-    for(int i=0; i<solucao->size(); i++)
-        listaOrdenada->push_back(new AuxiliaOrdenacao(0, solucao->at(i)));
 
     for(int i=0; i<numLabels; i++) {
         listaOrdenada->at(i)->numCompConexas = 0;
