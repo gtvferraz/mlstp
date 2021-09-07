@@ -3450,8 +3450,10 @@ void cenarioSete(string entrada, string saida) {
 
 int main(int argc, char **argv) { 
     int metodo = stoi(argv[1]) ;
+    
     if(argc < 2) {
         cout << "Parametro necessario:metodo(0 - Reativo, 1 - GRASP, 2 - MIP)" << endl;
+        createFolders("saidasMIP");
         return 0;
     }
     if(metodo == 3){
@@ -3459,18 +3461,21 @@ int main(int argc, char **argv) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, seed" << endl;
             return 0;
         }
+        createFolders("saidasSA");
         cenarioCinco(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stof(argv[6]), stof(argv[7]), stof(argv[8]), stoi(argv[9]));
     } else if(metodo == 5){
         if(argc < 7) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, tempo limite do GRASP, seed" << endl;
             return 0;
         }
+        createFolders("saidasIG");
         cenarioSeis(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stoi(argv[6]));
     } else if(metodo == 6){
         if(argc < 4) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida" << endl;
             return 0;
         }
+        createFolders("saidasAnalise");
         cenarioSete(argv[2], argv[3]);
     }
 }
