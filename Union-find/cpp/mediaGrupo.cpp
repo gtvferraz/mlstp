@@ -11,7 +11,7 @@ using namespace std;
 #define NUMDADOSGRASP 13
 #define NUMDADOSMIP 4
 #define NUMDADOSSA 16
-#define NUMDADOSIG 20
+#define NUMDADOSIG 23
 #define NUMALPHAS 6
 
 // g++ cpp/mediaGrupo.cpp -O3 -o mediaGrupo.out
@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
     int countAlpha[6];
     int countMelhoras = 0;
     int countUsoIG = 0;
+    int countUsoIGDiff = 0;
     int numSolucoes = 0;
     int numSolucoesGrasp = 0;
     int numSolucoesRepetidas = 0;
@@ -65,6 +66,9 @@ int main(int argc, char** argv) {
     float minItMelhora = INT_MAX;
     float maxItMelhora = 0;
     float mediaNumSolIG = 0;
+    float avgDiff = 0;
+    float minDiff = (float) INT_MAX;
+    float maxDiff = 0;
     double mediaMipGap = 0;
     double taxaDecaimento;
     double tempInicial;
@@ -295,12 +299,21 @@ int main(int argc, char** argv) {
                         if(dados[14] != 0) {
                             mediaNumSolIG += dados[14];
                             countUsoIG++;
+
+                            if(dados[14] > 1) {
+                                countUsoIGDiff++;
+                                if(dados[21] < minDiff)
+                                    minDiff = dados[21];
+                                if(dados[22] > maxDiff)
+                                    maxDiff = dados[22];
+                            }
                         }
                         numSolucoesGrasp += dados[15];
                         numSolucoesRepetidasGrasp += dados[16];
                         numSolucoes += dados[17];
                         numSolucoesRepetidas += dados[18];
                         numRepeticoesParciais += dados[19];
+                        avgDiff += dados[20];
                     }
                     
                     break;
@@ -322,13 +335,19 @@ int main(int argc, char** argv) {
         mediaMenorCusto /= 10;
         mediaMenorTempo /= 10;
         mediaTempoTotal /= 10;
+
         if(countMelhoras > 0)
             mediaItMelhora /= countMelhoras;
         else {
             minItMelhora = 0;
         }
-        if(countUsoIG > 0)
+        if(countUsoIG > 0) {
             mediaNumSolIG /= countUsoIG;
+            if(countUsoIGDiff > 0)
+                avgDiff /= countUsoIGDiff;
+        } else {
+            minDiff = 0;
+        }
 
         ss.str("");
         ss.clear();
@@ -354,7 +373,7 @@ int main(int argc, char** argv) {
             fprintf(file, "%i;%i;%.1f;%.4f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoes, numSolucoesRepetidas, numRepeticoesParciais);
         } else if(metodo == 5) {
             fprintf(file, "%.4f;%.4f;%.4f;%.4f;%.4f;%.4f;", mediaConstrutivo, mediaTempoSolucaoInicial, mediaTempoTotal, mediaTempoConstrutivo, mediaTempoMip, mediaTempo);
-            fprintf(file, "%i;%i;%.1f;%.4f;%.2f;%.2f;%.2f;%.2f;%i;%i;%i;%i;%i", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, mediaItMelhora, minItMelhora, maxItMelhora, mediaNumSolIG, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoes, numSolucoesRepetidas, numRepeticoesParciais);
+            fprintf(file, "%i;%i;%.1f;%.4f;%.2f;%.2f;%.2f;%.2f;%i;%i;%i;%i;%i;%.2f;%.2f;%.2f", (int)(tempoLimite*1000), seed, mediaMenorCusto, mediaMenorTempo, mediaItMelhora, minItMelhora, maxItMelhora, mediaNumSolIG, numSolucoesGrasp, numSolucoesRepetidasGrasp, numSolucoes, numSolucoesRepetidas, numRepeticoesParciais, avgDiff, minDiff, maxDiff);
         }
         
         fclose(file);

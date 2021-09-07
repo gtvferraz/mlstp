@@ -3,20 +3,25 @@
 
 #include <iostream>
 #include <vector>
+#include <bitset>
 #include <queue>
 #include "utils.h"
 
 using namespace std;
 
+const int NUM_MAX_ARESTAS = (1000*999)/2;
+
 struct Aresta {
     int id;
+    int arcoId;
     int label;
     int origem;
     int destino;
     Aresta* prox;
 
-    Aresta(int x, int y, int label, int id) {
+    Aresta(int x, int y, int label, int id, int arcoId) {
         this->id = id;
+        this->arcoId = arcoId;
         this->origem = x;
         this->destino = y;
         this->label = label;
@@ -49,6 +54,7 @@ struct Vertice {
 struct GrafoListaAdj {
     vector<Vertice*> vertices;
     vector<Aresta*> arestas;
+    vector<bitset<NUM_MAX_ARESTAS>> bitArestas;
     vector<int> numArestasLabels;
     vector<int> visitados;
     int numTotalArestas;
@@ -63,13 +69,16 @@ struct GrafoListaAdj {
         for(int i=0; i<numLabels; i++) {
             arestas.push_back(nullptr);
             numArestasLabels.push_back(0);
+
+            bitArestas.push_back(bitset<NUM_MAX_ARESTAS>());
         }
     }
 
     ~GrafoListaAdj() {
-        for(int i=0; i<arestas.size(); i++)
+        for(int i=0; i<arestas.size(); i++) {
             if(arestas[i] != nullptr)
                 delete arestas[i];
+        }
 
         for(int i=0; i<vertices.size(); i++)
             delete vertices[i];
@@ -78,8 +87,12 @@ struct GrafoListaAdj {
     void addAresta(int x, int y, int label) {
         Aresta* aux;
         int mapArco = 2*(numTotalArestas-1)+2;
+        //par numTotalArestas = (mapArco - 2)/2 + 1
+        //impar numTotalArestas = (mapArco - 2)/2 + 1 + 1
 
-        Aresta* newArestaX = new Aresta(x, y, label, mapArco);
+        // (k-1)*numArcos+aresta->id;
+
+        Aresta* newArestaX = new Aresta(x, y, label, numTotalArestas, mapArco);
         aux = vertices[x]->arestas[label];
         if(aux == nullptr)
             vertices[x]->arestas[label] = newArestaX;
@@ -90,7 +103,7 @@ struct GrafoListaAdj {
             aux->prox = newArestaX;
         }
 
-        Aresta* newArestaY = new Aresta(y, x, label, mapArco+1);
+        Aresta* newArestaY = new Aresta(y, x, label, numTotalArestas, mapArco+1);
         aux = vertices[y]->arestas[label];
         if(aux == nullptr)
             vertices[y]->arestas[label] = newArestaY;
@@ -101,7 +114,7 @@ struct GrafoListaAdj {
             aux->prox = newArestaY;
         }
 
-        Aresta* newArestaLabel = new Aresta(x, y, label, mapArco);
+        Aresta* newArestaLabel = new Aresta(x, y, label, numTotalArestas, mapArco);
         aux = arestas[label];
         if(aux == nullptr)
             arestas[label] = newArestaLabel;
@@ -111,6 +124,8 @@ struct GrafoListaAdj {
             }
             aux->prox = newArestaLabel;
         }
+
+        bitArestas[label][numTotalArestas] = 1;
 
         numArestasLabels[label] += 1;
         numTotalArestas++;
@@ -316,6 +331,47 @@ struct GrafoListaAdj {
             }
         }
         
+        return numCompConexa;
+    }
+
+    int updateNumCompConexasParcial(vector<int>* labels, SolucaoParcial* solucaoParcial) {
+        int numLabels = arestas.size();
+        int numVertices = vertices.size();
+
+        for(int i=0; i<numVertices; i++)
+            visitados[i] = solucaoParcial->compConexa->at(i);
+
+        int numCompConexa = solucaoParcial->numCompConexas;
+        int numVerticesVisitados = 0;
+        Aresta* aux;
+        
+        int auxCompConexa;
+
+        for(int i=0; i<labels->size(); i++) {
+            solucaoParcial->labels[labels->at(i)] = true;
+
+            aux = arestas[labels->at(i)];
+            while(aux != nullptr) {
+                if(visitados[aux->origem] != visitados[aux->destino]) {
+                    numCompConexa--;
+
+                    auxCompConexa = visitados[aux->destino];
+                    for(int j=0; j<numVertices; j++)
+                        if(visitados[j] == auxCompConexa)
+                            visitados[j] = visitados[aux->origem];
+
+                    if(numCompConexa == 1) 
+                        return numCompConexa;
+                    
+                }
+                aux = aux->prox;
+            }
+        }
+
+        solucaoParcial->numCompConexas = numCompConexa;
+        for(int i=0; i<numVertices; i++)
+            solucaoParcial->compConexa->at(i) = visitados[i];
+
         return numCompConexa;
     }
 

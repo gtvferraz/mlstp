@@ -17,13 +17,35 @@ struct AuxiliaOrdenacao {
     AuxiliaOrdenacao(){}
 };
 
+struct LabelInfo {
+    bool valido;
+    int numCompConexas;
+    int label;
+
+    LabelInfo(int numCompConexas, int label, bool valido) {
+        this->valido = valido;
+        this->numCompConexas = numCompConexas;
+        this->label = label;
+    }
+};
+
+bool comparaLabelsInfo(LabelInfo* a, LabelInfo* b) {
+    return (a->numCompConexas > b->numCompConexas);
+}
+
 struct SolucaoParcial {
     int numCompConexas;
     bool* labels;
+    bool deletaLabels;
     vector<int>* compConexa;
 
+    SolucaoParcial() {
+        deletaLabels = true;
+    }
+
     ~SolucaoParcial() {
-        delete []labels;
+        if(deletaLabels)
+            delete []labels;
         delete compConexa;
     }
 };
@@ -61,6 +83,12 @@ void printSolution(vector<int>* solucao) {
     for(int i=0; i<solucao->size(); i++)
         cout << solucao->at(i) << " ";
     cout << endl;
+}
+
+int fat(int num) {
+    if(num == 2)
+        return 2;
+    return num*fat(num-1);
 }
 
 #endif
