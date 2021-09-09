@@ -787,313 +787,6 @@ void construtivo(GrafoListaAdj* grafo, int iteracao, float alpha, float beta, ve
     //cout << "Num Comp: " << grafo->numCompConexas(solucao) << " " << solucao->size() << " " << tempo.count()/1000.0 << "ms" << endl;
 }
 
-void construtivo2(GrafoListaAdj* grafo, int iteracao, float alpha, float beta, vector<int>* solucao, vector<LabelInfo*>* labelsInfo, vector<LabelInfo*>* labelsControl, bool compControl[], bool reachComp[], int compConexas[], bitset<NUM_MAX_ARESTAS>* arestasComps) {
-    auto tempoInicio = std::chrono::high_resolution_clock::now();
-    
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
-    int numCompConexas = numVertices;
-
-    for(int i=0; i<numVertices; i++) {
-        compConexas[i] = i;
-        compControl[i] = true;
-        arestasComps[i].reset();
-    }
-
-    for(int i=0; i<numLabels; i++)
-        labelsControl->at(i)->valido = true;
-    
-    int randomLabel;
-    int count;
-    if(iteracao > 2) {
-        randomLabel = rand()%numLabels;
-    } else {
-        count = 1;
-        for(int i=1; i<numLabels; i++) {
-            if(labelsInfo->at(i)->numCompConexas < labelsInfo->at(0)->numCompConexas*(1-alpha))
-                break;
-            count++;
-        }
-        randomLabel = rand()%count;
-    }
-    solucao->push_back(labelsInfo->at(randomLabel)->label);
-
-    labelsControl->at(randomLabel)->valido = false;
-    
-    Aresta* aresta = grafo->arestas[labelsInfo->at(randomLabel)->label];
-    while(aresta != nullptr) {
-        if(compConexas[aresta->origem] != compConexas[aresta->destino]) {
-            numCompConexas--;
-
-            int root = compConexas[aresta->destino];
-            for(int i=0; i<numVertices; i++) {
-                if(compConexas[i] == root) {
-                    compConexas[i] = compConexas[aresta->origem];
-                    compControl[i] = false;
-                }
-            }
-        }
-        aresta = aresta->prox;
-    }
-
-    /*auto diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-    auto tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-    cout << "Temp: " << tempo.count()/1000.0 << "ms" << endl;
-    tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-    while(numCompConexas > 1) {
-        for(int i=0; i<numLabels; i++) {
-            labelsControl->at(i)->numCompConexas = 0;
-
-            if(labelsControl->at(i)->valido) {
-                for(int j=0; j<numVertices; j++) {
-                    aresta = grafo->vertices[j]->arestas[i];
-                    while(aresta != nullptr) {
-                        if(compConexas[aresta->origem] != compConexas[aresta->destino])
-                            arestasComps[compConexas[aresta->origem]][aresta->id] = 1;
-                        aresta = aresta->prox;
-                    }
-                }
-
-                for(int j=0; j<numVertices; j++) {
-                    if(compControl[j]) {
-                        //if((arestasComps[j]&grafo->bitArestas[i]).none())
-                        //    labelsControl->at(i)->numCompConexas += 1;
-                        labelsControl->at(i)->numCompConexas += (arestasComps[j]&grafo->bitArestas[i]).count();
-                    }
-                }
-            }
-        }
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp 2: " << tempo.count()/1000.0 << "ms, ";
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        sort(labelsControl->begin(), labelsControl->end(), comparaLabelsInfo);
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp sort: " << tempo.count()/1000.0 << "ms, ";
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        /*for(int i=0; i<labelsControl->size(); i++)
-            cout << labelsControl->at(i)->valido << "-" << labelsControl->at(i)->numCompConexas << " ";
-        cout << endl;*/
-
-        count = 1;
-        for(int i=1; i<numLabels; i++) {
-            if(labelsControl->at(i)->numCompConexas < labelsControl->at(0)->numCompConexas*(1-alpha))
-                break;
-            count++;
-        }
-
-        randomLabel = rand()%count;
-        solucao->push_back(labelsControl->at(randomLabel)->label);
-
-        labelsControl->at(randomLabel)->valido = false;
-
-        /*for(int i=0; i<solucao->size(); i++)
-            cout << solucao->at(i) << " ";
-        cout << endl;*/
-
-        aresta = grafo->arestas[labelsControl->at(randomLabel)->label];
-        while(aresta != nullptr) {
-            if(compConexas[aresta->origem] != compConexas[aresta->destino]) {
-                numCompConexas--;
-
-                int root = compConexas[aresta->destino];
-                for(int i=0; i<numVertices; i++) {
-                    if(compConexas[i] == root) {
-                        compConexas[i] = compConexas[aresta->origem];
-                        compControl[i] = false;
-                    }
-                }
-            }
-
-            aresta = aresta->prox;
-        }
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp 3: " << tempo.count()/1000.0 << "ms, " << endl;
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        //cout << "Comp: " << numCompConexas << endl;
-    }
-
-    auto diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-    auto tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-
-    for(int i=0; i<solucao->size(); i++)
-        cout << solucao->at(i) << " ";
-    cout << endl;
-
-    cout << endl << "Num Comp: " << grafo->numCompConexas(solucao) << " " << solucao->size() << " " << tempo.count()/1000.0 << "ms" << endl;
-}
-
-void construtivo3(GrafoListaAdj* grafo, int iteracao, float alpha, float beta, vector<int>* solucao, vector<LabelInfo*>* labelsInfo, vector<LabelInfo*>* labelsControl, bool compControl[], bool reachComp[], int compConexas[], map<string, bitset<NUM_MAX_ARESTAS>>* arestasComps) {
-    auto tempoInicio = std::chrono::high_resolution_clock::now();
-    
-    int numLabels = grafo->arestas.size();
-    int numVertices = grafo->vertices.size();
-    int numCompConexas = numVertices;
-
-    stringstream ss;
-
-    for(int i=0; i<numVertices; i++) {
-        compConexas[i] = i;
-        for(int j=i+1; j<numVertices; j++) {
-            ss.str("");
-            ss << i << "-" << j;
-            (*arestasComps)[ss.str()].reset();
-        }
-    }
-
-    for(int i=0; i<numLabels; i++)
-        labelsControl->at(i)->valido = true;
-    
-    int randomLabel;
-    int count;
-    if(iteracao > 2) {
-        randomLabel = rand()%numLabels;
-    } else {
-        count = 1;
-        for(int i=1; i<numLabels; i++) {
-            if(labelsInfo->at(i)->numCompConexas < labelsInfo->at(0)->numCompConexas*(1-alpha))
-                break;
-            count++;
-        }
-        randomLabel = rand()%count;
-    }
-    solucao->push_back(labelsInfo->at(randomLabel)->label);
-
-    labelsControl->at(randomLabel)->valido = false;
-    
-    Aresta* aresta = grafo->arestas[labelsInfo->at(randomLabel)->label];
-    while(aresta != nullptr) {
-        if(compConexas[aresta->origem] != compConexas[aresta->destino]) {
-            numCompConexas--;
-
-            int root = compConexas[aresta->destino];
-            for(int i=0; i<numVertices; i++) {
-                if(compConexas[i] == root) {
-                    compConexas[i] = compConexas[aresta->origem];
-                }
-            }
-        }
-        aresta = aresta->prox;
-    }
-
-    /*auto diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-    auto tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-    cout << "Temp: " << tempo.count()/1000.0 << "ms" << endl;
-    tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-    while(numCompConexas > 1) {
-        for(int i=0; i<numLabels; i++) {
-            labelsControl->at(i)->numCompConexas = 0;
-
-            if(labelsControl->at(i)->valido) {
-                for(int j=0; j<numVertices; j++) {
-                    aresta = grafo->vertices[j]->arestas[labelsControl->at(i)->label];
-                    while(aresta != nullptr) {
-                        if(compConexas[aresta->origem] != compConexas[aresta->destino]) {
-                            ss.str("");
-                            if(compConexas[aresta->origem] < compConexas[aresta->destino]) {
-                                ss << compConexas[aresta->origem] << "-" << compConexas[aresta->destino];
-                                (*arestasComps)[ss.str()][aresta->id] = 1;
-                            } else {
-                                ss << compConexas[aresta->destino] << "-" << compConexas[aresta->origem];
-                                (*arestasComps)[ss.str()][aresta->id] = 1;
-                            }
-                            
-                        }
-                        aresta = aresta->prox;
-                    }
-                }
-
-                for(int j=0; j<numVertices; j++) {
-                    for(int k=j+1; k<numVertices; k++) {
-                        ss.str("");
-                        ss << j << "-" << k;
-                        if(!(((*arestasComps)[ss.str()]&grafo->bitArestas[labelsControl->at(i)->label]).none())) {
-                            labelsControl->at(i)->numCompConexas += 1;
-                        }
-                        
-                        (*arestasComps)[ss.str()].reset();
-                        //labelsControl->at(i)->numCompConexas += (arestasComps[j]&grafo->bitArestas[i]).count();
-                    }
-                }
-            }
-        }
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp 2: " << tempo.count()/1000.0 << "ms, ";
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        sort(labelsControl->begin(), labelsControl->end(), comparaLabelsInfo);
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp sort: " << tempo.count()/1000.0 << "ms, ";
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        count = 1;
-        for(int i=1; i<numLabels; i++) {
-            if(labelsControl->at(i)->numCompConexas < labelsControl->at(0)->numCompConexas*(1-alpha))
-                break;
-            count++;
-        }
-
-        /*for(int i=0; i<labelsControl->size(); i++)
-            cout << labelsControl->at(i)->label << "-" << labelsControl->at(i)->numCompConexas << " ";
-        cout << endl;*/
-
-        randomLabel = rand()%count;
-        solucao->push_back(labelsControl->at(randomLabel)->label);
-
-        labelsControl->at(randomLabel)->valido = false;
-
-        /*for(int i=0; i<solucao->size(); i++)
-            cout << solucao->at(i) << " ";
-        cout << endl;*/
-
-        aresta = grafo->arestas[labelsControl->at(randomLabel)->label];
-        while(aresta != nullptr) {
-            if(compConexas[aresta->origem] != compConexas[aresta->destino]) {
-                numCompConexas--;
-
-                int root = compConexas[aresta->destino];
-                for(int i=0; i<numVertices; i++) {
-                    if(compConexas[i] == root) {
-                        compConexas[i] = compConexas[aresta->origem];
-                    }
-                }
-            }
-
-            aresta = aresta->prox;
-        }
-
-        /*diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-        tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-        cout << "Temp 3: " << tempo.count()/1000.0 << "ms, " << endl;
-        tempoInicio = std::chrono::high_resolution_clock::now();*/
-
-        //cout << "Comp: " << numCompConexas << endl;
-    }
-
-    auto diff = std::chrono::high_resolution_clock::now() - tempoInicio;
-    auto tempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
-
-    /*for(int i=0; i<solucao->size(); i++)
-        cout << solucao->at(i) << " ";
-    cout << endl;*/
-
-    //cout << endl << "Num Comp: " << grafo->numCompConexas(solucao) << " " << solucao->size() << " " << tempo.count()/1000.0 << "ms" << endl;
-}
-
 vector<int>* GRASP(GrafoListaAdj* grafo, int iteracoes, clock_t* tempoMelhorSolucao, float* tempoBuscaLocal, int* solucaoConstrutivo, GRBEnv* env, int custoOtimo, int* numIteracoes, int* numSolucoesRepetidas) {
     vector<int>* melhorSolucao = nullptr;
     vector<int>* solucao;
@@ -3001,8 +2694,6 @@ vector<int>* IG3(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
 
     vector<LabelInfo*>* labelsInfo = new vector<LabelInfo*>;
     vector<LabelInfo*>* labelsControl = new vector<LabelInfo*>;
-    //bitset<NUM_MAX_ARESTAS> arestasComps[numVertices];
-    //map<string, bitset<NUM_MAX_ARESTAS>>* arestasComps = new map<string, bitset<NUM_MAX_ARESTAS>>;
     bool compControl[numVertices];
     bool reachComp[numVertices];
     int compConexas[numVertices];
@@ -3066,7 +2757,6 @@ vector<int>* IG3(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
                 break;
             }
         }
-        //construtivo3(grafo, i, alphas[indiceAlpha], alphas[indiceAlpha], solucao, labelsInfo, labelsControl, compControl, reachComp, compConexas, arestasComps);
         construtivo(grafo, i, alphas[indiceAlpha], alphas[indiceAlpha], solucao, labelsInfo, labelsControl, compControl, reachComp, compConexas);
         buscaLocalExcedente(grafo, solucao);
         countAlphas[indiceAlpha]++;
@@ -3145,8 +2835,6 @@ vector<int>* IG3(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
                         delete solucoesConstr[i];
                 }
 
-                //delete arestasComps;
-
                 *avgDiff /= quantDiff;
 
                 return melhorSolucao;
@@ -3177,8 +2865,6 @@ vector<int>* IG3(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
         if(i != indMelhorSol)
             delete solucoesConstr[i];
     }
-
-    //delete arestasComps;
 
     for(int i=0; i<melhorSolucao->size(); i++) {
         cout << melhorSolucao->at(i) << " ";

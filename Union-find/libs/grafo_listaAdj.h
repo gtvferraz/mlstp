@@ -9,8 +9,6 @@
 
 using namespace std;
 
-const int NUM_MAX_ARESTAS = (1000*999)/2;
-
 struct Aresta {
     int id;
     int arcoId;
@@ -54,7 +52,6 @@ struct Vertice {
 struct GrafoListaAdj {
     vector<Vertice*> vertices;
     vector<Aresta*> arestas;
-    vector<bitset<NUM_MAX_ARESTAS>> bitArestas;
     vector<int> numArestasLabels;
     vector<int> visitados;
     int numTotalArestas;
@@ -69,8 +66,6 @@ struct GrafoListaAdj {
         for(int i=0; i<numLabels; i++) {
             arestas.push_back(nullptr);
             numArestasLabels.push_back(0);
-
-            bitArestas.push_back(bitset<NUM_MAX_ARESTAS>());
         }
     }
 
