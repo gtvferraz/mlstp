@@ -20,8 +20,8 @@ using namespace std;
 #define NUMALPHAS 6
 
 /*
-g++ -m64 -g -O3 -o main.out cpp/main.cpp -I ~/../../opt/gurobi911/linux64/include/ -L ~/../../opt/gurobi911/linux64/lib -l gurobi_c++ -l gurobi91 -lm
-./main.out 0 dataset/instances/g2/100/hd/50/0.txt saida.txt 200 50 0
+
+g++ -m64 -g -O3 -o main.out cpp/main.cpp -I ~/../../opt/gurobi911/linux64/include/ -L ~/../../opt/gurobi911/linux64/lib -l gurobi_c++ -l gurobi91 -lm./main.out 0 dataset/instances/g2/100/hd/50/0.txt saida.txt 200 50 0
 ./main.out 1 dataset/instances/g2/100/hd/50/0.txt saida.txt 10 0
 ./main.out 2 dataset/instances/g2/100/hd/50/0.txt saida.txt
 ./main.out 3 dataset/instances/g2/100/ld/125/3.txt saida.txt 50 0.9 300 0.001 1 0
@@ -490,6 +490,149 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
             sort(listaOrdenada->begin(), listaOrdenada->end(), compara_sort_b);
         }
 
+        listaAtual = listaOrdenada;
+    } while(numCompConexas > 1);
+
+    if(iteracao > 2)
+        listaOrdenadaInicial->at(indice)->numCompConexas = storeCompConexas;
+
+    for(int i=0; i<numLabels; i++) {
+        listaOrdenada->at(i)->numCompConexas = 0;
+
+        if(solucoesParciais[i] != nullptr)
+            delete solucoesParciais[i];
+    }
+}
+
+void auxPMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, float beta, vector<int>* solucao, vector<AuxiliaOrdenacao*>* listaOrdenadaInicial, vector<AuxiliaOrdenacao*>* listaOrdenada) {  
+    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->arestas.size();
+    int aleatorio;
+    int numCompConexas;
+    int count;
+
+    vector<AuxiliaOrdenacao*>* listaAtual;
+    SolucaoParcial* solucoesParciais[numLabels];
+    bool labelsSolucao[numLabels];
+
+    for(int i=0; i<numLabels; i++) {
+        solucoesParciais[i] = nullptr;
+        labelsSolucao[i] = false;
+    }
+
+    int storeCompConexas;
+    int indice = -1;
+    if(iteracao > 2) {
+        aleatorio = rand() % numLabels;
+        solucao->push_back(aleatorio);
+        labelsSolucao[aleatorio] = true;
+
+        for(int i=0; i<numLabels; i++) {
+            if(listaOrdenadaInicial->at(i)->posLabel == aleatorio) {
+                indice = i;
+                storeCompConexas = listaOrdenadaInicial->at(i)->numCompConexas;
+                listaOrdenadaInicial->at(i)->numCompConexas = INT_MAX;
+
+                for(int j=0; j<numLabels; j++)
+                    if(listaOrdenadaInicial->at(i)->posLabel == listaOrdenada->at(j)->posLabel) {
+                        listaOrdenada->at(j)->numCompConexas = INT_MAX;
+
+                        break;
+                    }
+                
+                break;
+            }
+        }
+    }
+
+    int indMenor = 0;
+    if(indice == 0)
+        indMenor = 1;
+
+    listaAtual = listaOrdenadaInicial;
+    solucao->push_back(0);
+    bool first = true;
+    float somatorio;
+    int label;
+
+    int it = 0;
+    do {
+        count = 0;
+
+        float theta = 1 + alpha*pow(beta, it);
+        for(int i=0; i<listaAtual->size(); i++) {
+            if(listaAtual->at(i)->numCompConexas != INT_MAX) {
+                if(listaAtual->at(i)->numCompConexas > listaAtual->at(indMenor)->numCompConexas*theta && listaAtual->at(i)->numCompConexas != INT_MAX)
+                    break;
+                count++;
+            }
+        }
+
+        indMenor = 0;
+
+        aleatorio = rand() % count;
+        while(listaAtual->at(aleatorio)->numCompConexas == INT_MAX)
+            aleatorio = (aleatorio+1)%numLabels;
+
+        int selectedLabel = listaAtual->at(aleatorio)->posLabel;
+        solucao->back() = selectedLabel;
+        labelsSolucao[selectedLabel] = true;
+        numCompConexas = listaAtual->at(aleatorio)->numCompConexas;
+
+        if(!first) {
+            for(int i=0; i<listaAtual->size(); i++) {
+                if(i != selectedLabel && !labelsSolucao[i]) {
+                    solucoesParciais[i]->numCompConexas = solucoesParciais[selectedLabel]->numCompConexas;
+                    solucoesParciais[i]->compConexa->clear();
+                    for(int j=0; j<numVertices; j++) {
+                        solucoesParciais[i]->compConexa->push_back(solucoesParciais[selectedLabel]->compConexa->at(j));
+                    }
+                }
+            }
+        }
+
+        if(numCompConexas > 1) {
+            if(first) {
+                for(int i=0; i<numLabels; i++)
+                    if(solucao->back() == listaOrdenada->at(i)->posLabel) {
+                        listaOrdenada->push_back(listaOrdenada->at(i));
+                        listaOrdenada->erase(listaOrdenada->begin()+i);
+                        break;
+                    }
+                first = false;
+            }
+            else {
+                listaOrdenada->push_back(listaOrdenada->at(aleatorio));
+                listaOrdenada->erase(listaOrdenada->begin()+aleatorio);
+            }
+
+            listaOrdenada->back()->numCompConexas = INT_MAX;
+
+            solucao->push_back(0);
+            for(int i=0; i<listaOrdenada->size(); i++) {
+                int label = listaOrdenada->at(i)->posLabel;
+                
+                if(listaOrdenada->at(i)->numCompConexas != INT_MAX) {
+                    solucao->back() = label;
+                    labelsSolucao[label] = true;
+                    
+                    if(solucoesParciais[label] == nullptr) {
+                        solucoesParciais[label] = grafo->numCompConexas2(labelsSolucao);
+                        solucoesParciais[label]->deletaLabels = false;
+                        listaOrdenada->at(i)->numCompConexas = solucoesParciais[label]->numCompConexas;
+                    } else {
+                        listaOrdenada->at(i)->numCompConexas = grafo->updateNumCompConexasParcial(solucao, solucoesParciais[label]);
+                    }
+
+                    //listaOrdenada->at(i)->numCompConexas = grafo->numCompConexas(solucao);
+
+                    labelsSolucao[label] = false;
+                }
+            }
+            sort(listaOrdenada->begin(), listaOrdenada->end(), compara_sort_b);
+        }
+
+        it++;
         listaAtual = listaOrdenada;
     } while(numCompConexas > 1);
 
@@ -2271,6 +2414,14 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     vector<int> countAlphas;
     vector<int> sumCustoAlphas;
 
+    /*int numBetas = 4;
+    float betas[numBetas] = {0.3, 0.4, 0.5, 0.6};
+    int indiceBeta;
+    float sumMediaCustoBetas;
+    vector<float> probBetas;
+    vector<int> countBetas;
+    vector<int> sumCustoBetas;*/
+
     for(int i=0; i<numAlphas; i++)
         probAlphas.push_back(100.0/numAlphas);
 
@@ -2278,6 +2429,14 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
         countAlphas.push_back(1);
         sumCustoAlphas.push_back(initialSolution->size());
     }
+
+    /*for(int i=0; i<numBetas; i++)
+        probBetas.push_back(100.0/numBetas);
+
+    for(int i=0; i<numBetas; i++) {
+        countBetas.push_back(1);
+        sumCustoBetas.push_back(initialSolution->size());
+    }*/
 
     *mediaItMelhora = 0;
     *minItMelhora = 0;
@@ -2299,12 +2458,27 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
             }
         }
 
+        /*aleatorio = rand() % 100;
+        acumulada = 0;
+        for(int j=0; j<numBetas; j++) {
+            acumulada += probBetas[j];
+            if(aleatorio < acumulada) {
+                indiceBeta = j;
+                break;
+            }
+        }*/
+
         //auxMVCAGRASP2(grafo, i, 1, solucao, listaOrdenadaInicial, listaOrdenada, numSorteios, tickets);
         auxMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        //auxPMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], betas[indiceBeta], solucao, listaOrdenadaInicial, listaOrdenada);
         //solucao = auxMVCAGRASP(grafo, i, 1);
         buscaLocalExcedente(grafo, solucao);
+
         countAlphas[indiceAlpha]++;
         sumCustoAlphas[indiceAlpha] += solucao->size(); 
+
+        /*countBetas[indiceBeta]++;
+        sumCustoBetas[indiceBeta] += solucao->size();*/ 
 
         if(solucao->size() < melhorSolucao->size()) {
             *tempoMelhorSolucao = std::chrono::high_resolution_clock::now();
@@ -2355,6 +2529,12 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
                 sumMediaCustoAlphas += 1.0/pow(5,sumCustoAlphas[j]/countAlphas[j]);
             for(int j=0; j<numAlphas; j++)
                 probAlphas[j] = (1/(sumMediaCustoAlphas * pow(5,sumCustoAlphas[j]/countAlphas[j]))) * 100;
+        
+            /*sumMediaCustoBetas = 0;
+            for(int j=0; j<numBetas; j++) 
+                sumMediaCustoBetas += 1.0/pow(5,sumCustoBetas[j]/countBetas[j]);
+            for(int j=0; j<numBetas; j++)
+                probBetas[j] = (1/(sumMediaCustoBetas * pow(5,sumCustoBetas[j]/countBetas[j]))) * 100;*/
         }
     }
 
@@ -2614,12 +2794,28 @@ vector<int>* IG2(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
     vector<int> countAlphas;
     vector<int> sumCustoAlphas;
 
+    int numBetas = 4;
+    float betas[numBetas] = {0.3, 0.4, 0.5, 0.6};
+    int indiceBeta;
+    float sumMediaCustoBetas;
+    vector<float> probBetas;
+    vector<int> countBetas;
+    vector<int> sumCustoBetas;
+
     for(int i=0; i<numAlphas; i++)
         probAlphas.push_back(100.0/numAlphas);
 
     for(int i=0; i<numAlphas; i++) {
         countAlphas.push_back(1);
         sumCustoAlphas.push_back(initialSolution->size());
+    }
+
+    for(int i=0; i<numBetas; i++)
+        probBetas.push_back(100.0/numBetas);
+
+    for(int i=0; i<numBetas; i++) {
+        countBetas.push_back(1);
+        sumCustoBetas.push_back(initialSolution->size());
     }
 
     int indMelhorSol = 0;
@@ -2654,10 +2850,24 @@ vector<int>* IG2(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
             }
         }
 
-        auxMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        aleatorio = rand() % 100;
+        acumulada = 0;
+        for(int j=0; j<numBetas; j++) {
+            acumulada += probBetas[j];
+            if(aleatorio < acumulada) {
+                indiceBeta = j;
+                break;
+            }
+        }
+
+        auxPMVCAGRASP2(grafo, i, alphas[indiceAlpha], betas[indiceBeta], solucao, listaOrdenadaInicial, listaOrdenada);
         buscaLocalExcedente(grafo, solucao);
+
         countAlphas[indiceAlpha]++;
         sumCustoAlphas[indiceAlpha] += solucao->size(); 
+
+        countBetas[indiceBeta]++;
+        sumCustoBetas[indiceBeta] += solucao->size(); 
 
         bool checkSolRep = false;
 
@@ -2746,6 +2956,12 @@ vector<int>* IG2(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIter
                 sumMediaCustoAlphas += 1.0/pow(5,sumCustoAlphas[j]/countAlphas[j]);
             for(int j=0; j<numAlphas; j++)
                 probAlphas[j] = (1/(sumMediaCustoAlphas * pow(5,sumCustoAlphas[j]/countAlphas[j]))) * 100;
+        
+            sumMediaCustoBetas = 0;
+            for(int j=0; j<numBetas; j++) 
+                sumMediaCustoBetas += 1.0/pow(5,sumCustoBetas[j]/countBetas[j]);
+            for(int j=0; j<numBetas; j++)
+                probBetas[j] = (1/(sumMediaCustoBetas * pow(5,sumCustoBetas[j]/countBetas[j]))) * 100;
         }
     }
 
@@ -3162,8 +3378,9 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
     int custoSolIG;
     if(solucaoInicial->size() != custoOtimo) {
         start = std::chrono::high_resolution_clock::now();
+        solucaoIG = IG(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas);
         //solucaoIG = IG3(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
-        solucaoIG = IG2(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
+        //solucaoIG = IG2(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
         diff = std::chrono::high_resolution_clock::now() - start;
         t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
         tempoIG = t1.count()/1000.0;
