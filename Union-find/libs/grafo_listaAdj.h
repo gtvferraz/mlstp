@@ -120,8 +120,6 @@ struct GrafoListaAdj {
             aux->prox = newArestaLabel;
         }
 
-        bitArestas[label][numTotalArestas] = 1;
-
         numArestasLabels[label] += 1;
         numTotalArestas++;
     }
