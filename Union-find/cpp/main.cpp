@@ -20,8 +20,8 @@ using namespace std;
 #define NUMALPHAS 6
 
 /*
-
-g++ -m64 -g -O3 -o main.out cpp/main.cpp -I ~/../../opt/gurobi911/linux64/include/ -L ~/../../opt/gurobi911/linux64/lib -l gurobi_c++ -l gurobi91 -lm./main.out 0 dataset/instances/g2/100/hd/50/0.txt saida.txt 200 50 0
+g++ -m64 -g -O3 -o main.out cpp/main.cpp -I ~/../../opt/gurobi911/linux64/include/ -L ~/../../opt/gurobi911/linux64/lib -l gurobi_c++ -l gurobi91 -lm
+./main.out 0 dataset/instances/g2/100/hd/50/0.txt saida.txt 200 50 0
 ./main.out 1 dataset/instances/g2/100/hd/50/0.txt saida.txt 10 0
 ./main.out 2 dataset/instances/g2/100/hd/50/0.txt saida.txt
 ./main.out 3 dataset/instances/g2/100/ld/125/3.txt saida.txt 50 0.9 300 0.001 1 0
@@ -1955,7 +1955,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
         totalArestas += numArestasLabels[i];
     }
 
-    for(int i=0; i<max((int)ceil(solucao->size()*alpha),1); i++) {
+    for(int i=0; i<min(max((int)ceil(solucao->size()*alpha),1), 3); i++) {
         aleatorio = (rand()%totalArestas) + 1;
         acumulada = 0;
         for(int j=0; j<solucao->size(); j++) {
@@ -2033,8 +2033,8 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
             if(novaSolucao->labels[i])
                 count++;
         auto start = std::chrono::high_resolution_clock::now();
-        vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
-        //vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
+        //vizinha = mipFluxo(grafo, novaSolucao, solucao, model, z);
+        vizinha = mip(grafo, novaSolucao, solucao, model, z, cb, &mipGap, tempoInicio, custoOtimo);
         auto diff = std::chrono::high_resolution_clock::now() - start;
         auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
         *tempoMip += t1.count()/1000.0;
@@ -2171,7 +2171,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
         sumCustoAlphas[indiceAlpha] += solucao->size(); 
 
         /*countBetas[indiceBeta]++;
-        sumCustoBetas[indiceBeta] += solucao->size();*/ 
+        sumCustoBetas[indiceBeta] += solucao->size();*/
 
         if(solucao->size() < melhorSolucao->size()) {
             *tempoMelhorSolucao = std::chrono::high_resolution_clock::now();
@@ -2276,10 +2276,10 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     GRBModel model = GRBModel(*env);
     GRBVar* z;
 
-    //z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
+    z = constroiModelo(grafo, &model, &cb, tempoInicio, custoOtimo);
     //z = constroiModeloFluxo(grafo, &model);
     //z = constroiModeloFluxo2(grafo, &model);
-    z = constroiModeloFluxo3(grafo, &model);
+    //z = constroiModeloFluxo3(grafo, &model);
     auto diff = std::chrono::high_resolution_clock::now() - start;
     auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(diff);
     *tempoMip = t1.count()/1000.0;
