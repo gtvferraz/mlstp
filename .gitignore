@@ -1,4 +1,5 @@
 *.txt
+*.out
 /Union-find/saidasGRASP/
 /Union-find/saidasSA/
 /Union-find/saidasIG/
