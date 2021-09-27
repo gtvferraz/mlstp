@@ -48,6 +48,7 @@ struct GrafoListaAdj {
     vector<Vertice*> vertices;
     vector<Aresta*> arestas;
     vector<int> numArestasLabels;
+    vector<float> pesos;
     vector<int> visitados;
 
     GrafoListaAdj(int numVertices, int numLabels) {

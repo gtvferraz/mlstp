@@ -1254,11 +1254,14 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
         return;  
     } 
 
+    int numLabels = grafo->arestas.size();
+
+    for(int i=0; i<numLabels; i++)
+        grafo->pesos.push_back(1.0/grafo->numArestasLabels[i]);
+
     vector<int>* solucaoInicial;
     //bool* solucaoSA;
     vector<int>* solucaoSA;
-
-    int numLabels = grafo->arestas.size();
 
     srand(seed);
     custoOtimo = custoSolucaoExata(entrada);
