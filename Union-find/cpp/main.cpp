@@ -1955,7 +1955,8 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
         totalArestas += numArestasLabels[i];
     }
 
-    for(int i=0; i<min(max((int)ceil(solucao->size()*alpha),1), 3); i++) {
+    //for(int i=0; i<min(max((int)ceil(solucao->size()*alpha),1), 3); i++) { // PARA REMOVER NO MÍNIMO UM RÓTULO E NO MÁXIMO TRÊS
+    for(int i=0; i<max((int)ceil(solucao->size()*alpha),1); i++) {
         aleatorio = (rand()%totalArestas) + 1;
         acumulada = 0;
         for(int j=0; j<solucao->size(); j++) {
