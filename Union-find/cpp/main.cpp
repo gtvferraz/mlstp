@@ -504,6 +504,252 @@ void auxMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>*
     }
 }
 
+//IMPLEMENTADA A QUESTÃO DE QUANDO UMA COMPONENTE CONEXA POSSUI APENAS UM VÉRTICE, APENAS OS RÓTULOS QUE ATINGEM ESSE VÉRTICE SÃO CONSIDERADOS COMO CANDIDATOS
+void auxMVCAGRASP3(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>* solucao, vector<AuxiliaOrdenacao*>* listaOrdenadaInicial, vector<AuxiliaOrdenacao*>* listaOrdenada) {  
+    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->arestas.size();
+    int aleatorio;
+    int numCompConexas;
+    int count;
+    bool pula;
+
+    vector<AuxiliaOrdenacao*>* listaAtual;
+    SolucaoParcial* solucoesParciais[numLabels];
+    bool labelsSolucao[numLabels];
+
+    for(int i=0; i<numLabels; i++) {
+        solucoesParciais[i] = nullptr;
+        labelsSolucao[i] = false;
+    }
+
+    int storeCompConexas;
+    int indice = -1;
+    if(iteracao > 2) {
+        aleatorio = rand() % numLabels;
+        solucao->push_back(aleatorio);
+        labelsSolucao[aleatorio] = true;
+
+        for(int i=0; i<numLabels; i++) {
+            if(listaOrdenadaInicial->at(i)->posLabel == aleatorio) {
+                indice = i;
+                storeCompConexas = listaOrdenadaInicial->at(i)->numCompConexas;
+                listaOrdenadaInicial->at(i)->numCompConexas = INT_MAX;
+
+                for(int j=0; j<numLabels; j++)
+                    if(listaOrdenadaInicial->at(i)->posLabel == listaOrdenada->at(j)->posLabel) {
+                        listaOrdenada->at(j)->numCompConexas = INT_MAX;
+
+                        break;
+                    }
+                
+                break;
+            }
+        }
+    }
+
+    int indMenor = 0;
+    if(indice == 0)
+        indMenor = 1;
+
+    listaAtual = listaOrdenadaInicial;
+    solucao->push_back(0);
+    bool first = true;
+    float somatorio;
+    int label;
+
+    do {
+        pula = false;
+        if(solucao->size() > 1) {
+            SolucaoParcial* solucaoParcial = grafo->numCompConexas2(labelsSolucao);
+            solucaoParcial->deletaLabels = false;
+
+            for(int i=0; i<numVertices; i++) {
+                int countVert = 0;
+                for(int j=0; j<numVertices; j++) {
+                    if(solucaoParcial->compConexa->at(j) == i) {
+                        countVert++;
+                        if(countVert > 1)
+                            break;
+                    }
+                }
+                if(countVert == 1) {
+                    vector<AuxiliaOrdenacao*> countNumComp;
+                    for(int j=0; j<numLabels; j++) {
+                        if(!labelsSolucao[j]) {
+                            solucao->back() = j;
+                            countNumComp.push_back(new AuxiliaOrdenacao(grafo->numCompConexas(solucao), j));
+                        }
+                    }
+
+                    sort(countNumComp.begin(), countNumComp.end(), compara_sort_b);
+                    count = 0;
+                    for(int j=0; j<countNumComp.size(); j++) {
+                        if(countNumComp[j]->numCompConexas > countNumComp[0]->numCompConexas*alpha)
+                            break;
+                        count++;
+                    }
+
+                    aleatorio = rand()%count;
+                    solucao->back() = countNumComp[aleatorio]->posLabel;
+                    labelsSolucao[countNumComp[aleatorio]->posLabel] = true;
+                    numCompConexas = countNumComp[aleatorio]->numCompConexas;
+
+                    if(numCompConexas > 1)
+                        solucao->push_back(0);
+                    pula = true;
+
+                    for(int j=0; j<countNumComp.size(); j++)
+                        delete countNumComp[j];
+                
+                    break;
+                }
+            }
+
+            delete solucaoParcial;
+        }
+
+        if(!pula) {
+            count = 0;
+            for(int i=0; i<listaAtual->size(); i++) {
+                if(listaAtual->at(i)->numCompConexas != INT_MAX) {
+                    if(listaAtual->at(i)->numCompConexas > listaAtual->at(indMenor)->numCompConexas*alpha && listaAtual->at(i)->numCompConexas != INT_MAX)
+                        break;
+                    count++;
+                }
+            }
+
+            indMenor = 0;
+
+            aleatorio = rand() % count;
+            while(listaAtual->at(aleatorio)->numCompConexas == INT_MAX)
+                aleatorio = (aleatorio+1)%numLabels;
+
+            int selectedLabel = listaAtual->at(aleatorio)->posLabel;
+            solucao->back() = selectedLabel;
+            labelsSolucao[selectedLabel] = true;
+            numCompConexas = listaAtual->at(aleatorio)->numCompConexas;
+
+            if(!first) {
+                for(int i=0; i<listaAtual->size(); i++) {
+                    if(i != selectedLabel && !labelsSolucao[i]) {
+                        solucoesParciais[i]->numCompConexas = solucoesParciais[selectedLabel]->numCompConexas;
+                        solucoesParciais[i]->compConexa->clear();
+                        for(int j=0; j<numVertices; j++) {
+                            solucoesParciais[i]->compConexa->push_back(solucoesParciais[selectedLabel]->compConexa->at(j));
+                        }
+                    }
+                }
+            }
+
+            if(numCompConexas > 1) {
+                if(first) {
+                    for(int i=0; i<numLabels; i++)
+                        if(solucao->back() == listaOrdenada->at(i)->posLabel) {
+                            listaOrdenada->push_back(listaOrdenada->at(i));
+                            listaOrdenada->erase(listaOrdenada->begin()+i);
+                            break;
+                        }
+                    first = false;
+                }
+                else {
+                    listaOrdenada->push_back(listaOrdenada->at(aleatorio));
+                    listaOrdenada->erase(listaOrdenada->begin()+aleatorio);
+                }
+
+                listaOrdenada->back()->numCompConexas = INT_MAX;
+
+                solucao->push_back(0);
+                for(int i=0; i<listaOrdenada->size(); i++) {
+                    int label = listaOrdenada->at(i)->posLabel;
+                    
+                    if(listaOrdenada->at(i)->numCompConexas != INT_MAX) {
+                        solucao->back() = label;
+                        labelsSolucao[label] = true;
+                        
+                        if(solucoesParciais[label] == nullptr) {
+                            solucoesParciais[label] = grafo->numCompConexas2(labelsSolucao);
+                            solucoesParciais[label]->deletaLabels = false;
+                            listaOrdenada->at(i)->numCompConexas = solucoesParciais[label]->numCompConexas;
+                        } else {
+                            listaOrdenada->at(i)->numCompConexas = grafo->updateNumCompConexasParcial(solucao, solucoesParciais[label]);
+                        }
+
+                        //listaOrdenada->at(i)->numCompConexas = grafo->numCompConexas(solucao);
+
+                        labelsSolucao[label] = false;
+                    }
+                }
+                sort(listaOrdenada->begin(), listaOrdenada->end(), compara_sort_b);
+            }
+
+            listaAtual = listaOrdenada;
+        }
+    } while(numCompConexas > 1);
+
+    if(iteracao > 2)
+        listaOrdenadaInicial->at(indice)->numCompConexas = storeCompConexas;
+
+    for(int i=0; i<numLabels; i++) {
+        listaOrdenada->at(i)->numCompConexas = 0;
+
+        if(solucoesParciais[i] != nullptr)
+            delete solucoesParciais[i];
+    }
+}
+
+//IMPLEMENTADA A QUESTÃO DO CONSTRUTIVO QUE UTILIZA A FREQUÊNCIA DO RÓTULO COMO HEURÍSTICA, E É REATIVO
+void novoConstrutivo(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int>* solucao, vector<AuxiliaOrdenacao*>* listaOrdenadaInicial, vector<AuxiliaOrdenacao*>* listaOrdenada, vector<int>* countLabels) {  
+    int numVertices = grafo->vertices.size();
+    int numLabels = grafo->arestas.size();
+    int aleatorio;
+    int numCompConexas;
+    int count;
+
+    vector<AuxiliaOrdenacao*> candidatos;
+    bool labelsSolucao[numLabels];
+
+    for(int i=0; i<numLabels; i++) {
+        labelsSolucao[i] = false;
+    }
+
+    if(iteracao > 2) {
+        aleatorio = rand() % numLabels;
+        solucao->push_back(aleatorio);
+        labelsSolucao[aleatorio] = true;
+        //countLabels->at(aleatorio)++;
+    }
+
+    do {
+        solucao->push_back(0);
+
+        for(int i=0; i<numLabels; i++) {
+            if(!labelsSolucao[i]) {
+                candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i], i));
+                //candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i]*countLabels->at(i), i));
+            }
+        }
+        sort(candidatos.begin(), candidatos.end(), compara_sort_c);
+
+        count = 0;
+        for(int i=0; i<candidatos.size(); i++) {
+            if(candidatos[i]->peso > candidatos[0]->peso*alpha)
+                break;
+            count++;
+        }
+        aleatorio = rand() % count;
+
+        int selectedLabel = candidatos[aleatorio]->posLabel;
+        solucao->back() = selectedLabel;
+        labelsSolucao[selectedLabel] = true;
+        numCompConexas = grafo->numCompConexas(solucao);
+        //countLabels->at(selectedLabel)++;
+
+        for(int i=0; i<candidatos.size(); i++)
+            delete candidatos[i];
+        candidatos.clear();
+    } while(numCompConexas > 1);
+}
+
 void auxPMVCAGRASP2(GrafoListaAdj* grafo, int iteracao, float alpha, float beta, vector<int>* solucao, vector<AuxiliaOrdenacao*>* listaOrdenadaInicial, vector<AuxiliaOrdenacao*>* listaOrdenada) {  
     int numVertices = grafo->vertices.size();
     int numLabels = grafo->arestas.size();
@@ -2064,6 +2310,11 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     int numLabels = grafo->arestas.size();
 
     vector<SolucaoParcial*>* parciais = new vector<SolucaoParcial*>;
+    vector<int> countLabels;
+
+    for(int i=0; i<numLabels; i++) {
+        countLabels.push_back(1);
+    }
 
     //vector<vector<int>> contabiliza;  
     vector<int> a;
@@ -2162,10 +2413,10 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
             }
         }*/
 
-        //auxMVCAGRASP2(grafo, i, 1, solucao, listaOrdenadaInicial, listaOrdenada, numSorteios, tickets);
-        auxMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        //auxMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        //auxMVCAGRASP3(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        novoConstrutivo(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada, &countLabels);
         //auxPMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], betas[indiceBeta], solucao, listaOrdenadaInicial, listaOrdenada);
-        //solucao = auxMVCAGRASP(grafo, i, 1);
         buscaLocalExcedente(grafo, solucao);
 
         countAlphas[indiceAlpha]++;
@@ -3039,6 +3290,9 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
 
     int numLabels = grafo->arestas.size();
 
+    for(int i=0; i<numLabels; i++)
+        grafo->pesos.push_back(1.0/grafo->numArestasLabels[i]);
+
     vector<int>* solucaoInicial;
     vector<int>* solucaoIG;
 
@@ -3048,7 +3302,6 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
     custoOtimo = custoSolucaoExata(entrada);
     //custoOtimo = -1;
     env = new GRBEnv();
-    
     
     std::chrono::high_resolution_clock::time_point stopMelhor = std::chrono::high_resolution_clock::now();
     auto start = std::chrono::high_resolution_clock::now();

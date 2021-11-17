@@ -8,9 +8,15 @@ using namespace std;
 struct AuxiliaOrdenacao {
     int posLabel;
     int numCompConexas;
+    float peso;
 
     AuxiliaOrdenacao(int numCompConexas, int posLabel) {
         this->numCompConexas = numCompConexas;
+        this->posLabel = posLabel;
+    }
+
+    AuxiliaOrdenacao(float peso, int posLabel) {
+        this->peso = peso;
         this->posLabel = posLabel;
     }
 
@@ -50,6 +56,23 @@ struct SolucaoParcial {
     }
 };
 
+struct SolucaoParcial2 {
+    bool* labels;
+    int numVertices;
+    vector<bool> vertices;
+
+    SolucaoParcial2(int numVertices) {
+        this->numVertices = 0;
+        for(int i=0; i<numVertices; i++) {
+            vertices.push_back(false);
+        }
+    }
+
+    ~SolucaoParcial2() {
+        delete []labels;
+    }
+};
+
 struct ContabilizaArestas {
     int v1;
     int v2;
@@ -58,6 +81,10 @@ struct ContabilizaArestas {
 
 bool compara_sort_b(AuxiliaOrdenacao* a, AuxiliaOrdenacao* b) {
     return (a->numCompConexas < b->numCompConexas);
+}
+
+bool compara_sort_c(AuxiliaOrdenacao* a, AuxiliaOrdenacao* b) {
+    return (a->peso < b->peso);
 }
 
 bool taNoVetor(vector<int>* vetor, int x) {
