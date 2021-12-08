@@ -605,6 +605,231 @@ vector<int>* pertubacao(GrafoListaAdj* grafo, vector<int>* solucao, float* tempo
     return vizinha;
 }
 
+//Perturbação com a mecânica de quando tiver apenas um vértice em alguma componente conexas, usar como candidatos apenas os rótulos que alcançam esse vértice
+vector<int>* pertubacao2(GrafoListaAdj* grafo, vector<int>* solucao, float* tempoBuscaLocal, bool* valida, float alpha, float beta, GRBEnv* env, vector<SolucaoParcial*>* parciais) {
+    int aleatorio;
+    int maxArestas;
+    int numCompConexas;
+    int numLabels;
+    int count;
+    int totalArestas;
+    int totalProb;
+    int acumulada;
+    bool adicionou;
+    float tempo;
+    bool auxRetirados[solucao->size()];
+    vector<AuxiliaOrdenacao*> listaOrdenada;
+    vector<int> espacoLabels;
+    vector<int> retirados;
+    
+    numLabels = grafo->arestas.size();
+    int numVertices = grafo->vertices.size();
+    bool* solucaoParcial = new bool[numLabels];
+    for(int i=0; i<numLabels; i++)
+        solucaoParcial[i] = false;
+    
+    //REMOVE 20% DOS LABELS
+    /*
+    for(int i=0; i<solucao->size(); i++) { 
+        if(rand() % 100 >= 80) //Com 70 a 200-0.2-200.2 foi
+            retirados.push_back(solucao->at(i));
+        else
+            solucaoParcial->push_back(solucao->at(i));
+    }*/
+    
+    //FIM REMOVE 20% DOS LABELS
+    //REMOVE 20% DOS LABELS, ONDE QUANTO MENOS ARESTAS O LABEL POSSUI, MAIOR A CHANCE DELE SER REMOVIDO
+    
+    totalArestas = 0;
+    for(int i=0; i<solucao->size(); i++) {
+        totalArestas += grafo->numArestasLabels[solucao->at(i)];
+        auxRetirados[i] = true;
+    }
+
+    for(int i=0; i<ceil(solucao->size()*beta); i++) {
+    //for(int i=0; i<ceil(solucao->size()*0.8); i++) {
+        aleatorio = rand() % totalArestas;
+        acumulada = 0;
+        for(int j=0; j<solucao->size(); j++) {
+            acumulada += grafo->numArestasLabels[solucao->at(j)];
+
+            if(acumulada > aleatorio) {
+                if(auxRetirados[j]) {
+                    solucaoParcial[solucao->at(j)] = true;
+                    //retirados.push_back(solucao->at(j));
+                    auxRetirados[j] = false;
+                } 
+                /*else {
+                    for(int k=1; k<solucao->size(); k++) {
+                        int indice = (j+k)%solucao->size();
+                        if(auxRetirados[indice]) {
+                            solucaoParcial->push_back(solucao->at(indice));
+                            //retirados.push_back(solucao->at(j));
+                            auxRetirados[indice] = false;
+                            break;
+                        }
+                    }
+                }*/
+                break;
+            }
+        }
+    }
+
+    for(int i=0; i<solucao->size(); i++)
+        if(auxRetirados[i])
+            retirados.push_back(solucao->at(i));
+            //solucaoParcial->push_back(solucao->at(i));
+    
+    //FIM REMOVE 20% DOS LABELS, ONDE QUANTO MENOS ARESTAS O LABEL POSSUI, MAIOR A CHANCE DELE SER REMOVIDO
+    
+    for(int i=0; i<numLabels; i++) {
+        //if(!taNoVetor(solucaoParcial, i) && !taNoVetor(&retirados, i)) {
+        if(!solucaoParcial[i]) {
+            espacoLabels.push_back(i);
+        }
+    }
+
+    bool labelsSolucao[numLabels];
+    vector<int>* vizinhaCompleta = new vector<int>;
+    for(int i=0; i<numLabels; i++) {
+        labelsSolucao[i] = solucaoParcial[i];
+        if(solucaoParcial[i])
+            vizinhaCompleta->push_back(i);
+    }
+    
+    SolucaoParcial* novaSolucao = nullptr;
+    bool verifica;
+    for(int i=0; i<parciais->size(); i++) {
+        verifica = true;
+        for(int j=0; j<numLabels; j++)
+            if(solucaoParcial[j] != parciais->at(i)->labels[j]) {
+                verifica = false;
+                break;
+            }
+        if(verifica) {
+            delete []solucaoParcial;
+            novaSolucao = parciais->at(i);
+            break;
+        }
+    }
+    if(novaSolucao == nullptr) {
+        novaSolucao = grafo->numCompConexas2(solucaoParcial);
+        parciais->push_back(novaSolucao);
+    }
+
+    vector<int>* vizinha = new vector<int>;
+    do {
+        if(espacoLabels.empty()) {
+            *valida = false;
+            for(int i=0; i<numLabels; i++)
+                if(novaSolucao->labels[i])
+                    vizinha->push_back(i);
+            delete vizinhaCompleta;
+            return vizinha;
+        }
+        listaOrdenada.clear();
+        vizinha->push_back(0);
+        vizinhaCompleta->push_back(0);
+
+        bool pula = false;
+        SolucaoParcial* componentes = grafo->numCompConexas2(labelsSolucao);
+        componentes->deletaLabels = false;
+
+        for(int i=0; i<numVertices; i++) {
+            int countVert = 0;
+            for(int j=0; j<numVertices; j++) {
+                if(componentes->compConexa->at(j) == i) {
+                    countVert++;
+                    if(countVert > 1)
+                        break;
+                }
+            }
+            if(countVert == 1) {
+                vector<AuxiliaOrdenacao*> countNumComp;
+                for(int j=0; j<numLabels; j++) {
+                    if(!labelsSolucao[j]) {
+                        vizinhaCompleta->back() = j;
+                        countNumComp.push_back(new AuxiliaOrdenacao(grafo->numCompConexas(vizinhaCompleta), j));
+                    }
+                }
+
+                sort(countNumComp.begin(), countNumComp.end(), compara_sort_b);
+                count = 0;
+                for(int j=0; j<countNumComp.size(); j++) {
+                    if(countNumComp[j]->numCompConexas > countNumComp[0]->numCompConexas*alpha)
+                        break;
+                    count++;
+                }
+
+                aleatorio = rand()%count;
+                vizinha->back() = countNumComp[aleatorio]->posLabel;
+                vizinhaCompleta->back() = countNumComp[aleatorio]->posLabel;
+                labelsSolucao[countNumComp[aleatorio]->posLabel] = true;
+                numCompConexas = countNumComp[aleatorio]->numCompConexas;
+
+                if(numCompConexas > 1)
+                    vizinha->push_back(0);
+                pula = true;
+
+                for(int j=0; j<countNumComp.size(); j++)
+                    delete countNumComp[j];
+            
+                break;
+            }
+        }
+
+        delete componentes;
+
+        if(!pula) {
+            for(int i=0; i<espacoLabels.size(); i++) {
+                vizinha->at(vizinha->size()-1) = espacoLabels[i];
+                //listaOrdenada.push_back(new AuxiliaOrdenacao(grafo->numCompConexas(vizinha), i)); 
+                listaOrdenada.push_back(new AuxiliaOrdenacao(grafo->numCompConexasParcial(vizinha, novaSolucao), i));  
+                /*int aux = grafo->numCompConexas(vizinha);
+                if(aux != listaOrdenada[i]->numCompConexas) {
+                    cout << "Componentes: " <<  aux << ", " << listaOrdenada[i]->numCompConexas << endl;
+                    for(int j=0; j<vizinha->size(); j++)
+                        cout << vizinha->at(j) << " ";
+                    cout << endl;
+                }*/
+            }
+            sort(listaOrdenada.begin(), listaOrdenada.end(), compara_sort_b);
+            
+            count = 0;
+            for(int i=0; i<listaOrdenada.size(); i++) {
+                if(listaOrdenada[i]->numCompConexas > listaOrdenada[0]->numCompConexas*alpha)
+                    break;
+                count++;
+            }
+            aleatorio = rand() % count;
+            //aleatorio = rand() % (int)ceil(listaOrdenada.size()*(alpha-1));
+
+            vizinha->at(vizinha->size()-1) = espacoLabels[listaOrdenada[aleatorio]->posLabel];
+            espacoLabels.erase(espacoLabels.begin()+listaOrdenada[aleatorio]->posLabel);
+
+            numCompConexas = listaOrdenada[aleatorio]->numCompConexas;
+            for(int i=0; i<listaOrdenada.size(); i++)
+                delete listaOrdenada[i];
+        }
+    }while(numCompConexas > 1);
+        
+
+    //double mipGap;
+    tempo = clock();
+    buscaLocalExcedente(grafo, vizinha);
+    /*if(solucao->size() > 1)
+        buscaLocalMIP(grafo, vizinha, env, &mipGap, 2);*/
+    *tempoBuscaLocal += ((float)(clock() - tempo));
+
+    *valida = true;
+
+    for(int i=0; i<numLabels; i++)
+        if(novaSolucao->labels[i])
+            vizinha->push_back(i);
+    
+    return vizinha;
+}
+
 vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempInicial, double tempFinal, int numIteracoes, double alpha, clock_t* tempoMelhorSolucao, float* tempoBuscaLocal, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* parciaisRepetidas) {
     vector<int>* solucao;
     vector<int>* novaSolucao;
@@ -673,8 +898,8 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
         beta = -0.00033*temp + 0.9;
         for(int i=0; i<numIteracoes; i++) {       
             if(*numSolucoes < numAlphas) {
-                novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
-                //novaSolucao = pertubacao(grafo, solucao, &tempoBuscaLocal, &valida, alphas[0]);
+                //novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
+                novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
                 countAlphas.push_back(1);
                 sumCustoSolucoes.push_back(novaSolucao->size());
             }
@@ -688,8 +913,8 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
                         break;
                     }
                 }
-                novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
-                //novaSolucao = pertubacao(grafo, solucao, &tempoBuscaLocal, &valida, alphas[0]);
+                //novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
+                novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
                 countAlphas[indiceAlpha]++;
                 sumCustoSolucoes[indiceAlpha] += novaSolucao->size();
             }

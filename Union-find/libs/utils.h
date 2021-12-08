@@ -18,10 +18,16 @@ struct AuxiliaOrdenacao {
 struct SolucaoParcial {
     int numCompConexas;
     bool* labels;
+    bool deletaLabels;
     vector<int>* compConexa;
 
+    SolucaoParcial() {
+        deletaLabels = true;
+    }
+
     ~SolucaoParcial() {
-        delete []labels;
+        if(deletaLabels)
+            delete []labels;
         delete compConexa;
     }
 };
