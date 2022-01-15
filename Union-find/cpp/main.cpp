@@ -716,7 +716,7 @@ void novoConstrutivo(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int
         aleatorio = rand() % numLabels;
         solucao->push_back(aleatorio);
         labelsSolucao[aleatorio] = true;
-        //countLabels->at(aleatorio)++;
+        countLabels->at(aleatorio)++;
     }
 
     do {
@@ -724,8 +724,8 @@ void novoConstrutivo(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int
 
         for(int i=0; i<numLabels; i++) {
             if(!labelsSolucao[i]) {
-                candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i], i));
-                //candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i]*countLabels->at(i), i));
+                //candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i], i));
+                candidatos.push_back(new AuxiliaOrdenacao(grafo->pesos[i]*(countLabels->at(i)/2), i));
             }
         }
         sort(candidatos.begin(), candidatos.end(), compara_sort_c);
@@ -742,7 +742,7 @@ void novoConstrutivo(GrafoListaAdj* grafo, int iteracao, float alpha, vector<int
         solucao->back() = selectedLabel;
         labelsSolucao[selectedLabel] = true;
         numCompConexas = grafo->numCompConexas(solucao);
-        //countLabels->at(selectedLabel)++;
+        countLabels->at(selectedLabel)++;
 
         for(int i=0; i<candidatos.size(); i++)
             delete candidatos[i];
@@ -2414,8 +2414,8 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
         }*/
 
         //auxMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
-        //auxMVCAGRASP3(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
-        novoConstrutivo(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada, &countLabels);
+        auxMVCAGRASP3(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada);
+        //novoConstrutivo(grafo, i, 1+alphas[indiceAlpha], solucao, listaOrdenadaInicial, listaOrdenada, &countLabels);
         //auxPMVCAGRASP2(grafo, i, 1+alphas[indiceAlpha], betas[indiceBeta], solucao, listaOrdenadaInicial, listaOrdenada);
         buscaLocalExcedente(grafo, solucao);
 
