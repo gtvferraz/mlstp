@@ -2296,7 +2296,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
     return vizinha;
 }
 
-vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIteracoes, std::chrono::high_resolution_clock::time_point* tempoMelhorSolucao, float* tempoMip, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* numParciaisRepetidas, clock_t tempoInicio, float *mediaItMelhora, float *minItMelhora, float *maxItMelhora, vector<int>* vetNumCompConexas) {
+vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIteracoes, int numSolucoesConst, int numTentativas, float betas[2], std::chrono::high_resolution_clock::time_point* tempoMelhorSolucao, float* tempoMip, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* numParciaisRepetidas, clock_t tempoInicio, float *mediaItMelhora, float *minItMelhora, float *maxItMelhora, vector<int>* vetNumCompConexas) {
     vector<int>* solucao;
     vector<int>* novaSolucao;
     vector<int>* melhorSolucao;
@@ -2387,7 +2387,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     *minItMelhora = 0;
     *maxItMelhora = 0;
 
-    int numSolucoesConst = 200;
+    //int numSolucoesConst = 200;
     int iteracaoMelhor = 0;
     melhorSolucao = initialSolution;
     for(int i=0; i<numIteracoes; i++) {
@@ -2499,8 +2499,10 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     if(construtivas.size() < numSolucoesConst)
         delete solucao;
 
-    alphas[0] = 0.4;
-    alphas[1] = 0.6;
+    //alphas[0] = 0.4;
+    //alphas[1] = 0.6;
+    alphas[0] = betas[0];
+    alphas[1] = betas[1];
     /*alphas[0] = 1;
     alphas[1] = 2;*/
     numAlphas = 2;
@@ -2539,7 +2541,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
 
     for(int i=0; i<construtivas.size(); i++) { 
         tentativas = 0;
-        while(tentativas < 10) { 
+        while(tentativas < numTentativas) { 
             solucao = construtivas[i];
 
             aleatorio = rand() % 100;
@@ -2665,7 +2667,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
         }
     }
 
-    cout << "TAM PARCIAIS: " << parciais->size() << endl;
+    //cout << "TAM PARCIAIS: " << parciais->size() << endl;
 
     if(*mediaItMelhora == 0) {
         *minItMelhora = 0;
@@ -3254,7 +3256,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     delete env;
 }
 
-void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimite, int seed) {
+void cenarioSeis(string entrada, string saida, int numIteracoes, int numSolucoesConst, int numTentativas, float betas[2], float tempoLimite, int seed) {
     FILE* file;
     GrafoListaAdj* grafo;
     GRBEnv* env;
@@ -3299,7 +3301,7 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
     vector<int>* vetNumCompConexas = new vector<int>;
 
     srand(seed);
-    custoOtimo = custoSolucaoExata(entrada);
+    //custoOtimo = custoSolucaoExata(entrada);
     //custoOtimo = -1;
     env = new GRBEnv();
     
@@ -3312,13 +3314,13 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
     tempoMelhorSolucao = tempoSolucaoInicial;
     
     custoSolucaoInicial = solucaoInicial->size();
-    cout << "Solucao Inicial: " << solucaoInicial->size() << ", Tempo: " << tempoSolucaoInicial << "ms" << endl;
+    //cout << "Solucao Inicial: " << solucaoInicial->size() << ", Tempo: " << tempoSolucaoInicial << "ms" << endl;
     
     srand(seed);
     int custoSolIG;
     if(solucaoInicial->size() != custoOtimo) {
         start = std::chrono::high_resolution_clock::now();
-        solucaoIG = IG(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas);
+        solucaoIG = IG(grafo, solucaoInicial, numIteracoes, numSolucoesConst, numTentativas, betas, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas);
         //solucaoIG = IG3(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
         //solucaoIG = IG2(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
         diff = std::chrono::high_resolution_clock::now() - start;
@@ -3351,12 +3353,14 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
 
     ss.str("");
     ss.clear();
-    ss << "\n" << custoSolIG << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoIG << ";" << tempoIG - tempoMip << ";" << tempoMip << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";"  << mediaItMelhora << ";"  << minItMelhora << ";"  << maxItMelhora << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesIG << ";" << numSolucoesRepetidasIG << ";" << numParciaisRepetidas << ";" << avgDiff << ";" << minDiff << ";" << maxDiff << ";" << seed;
+    //ss << "\n" << custoSolIG << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoIG << ";" << tempoIG - tempoMip << ";" << tempoMip << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";"  << mediaItMelhora << ";"  << minItMelhora << ";"  << maxItMelhora << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesIG << ";" << numSolucoesRepetidasIG << ";" << numParciaisRepetidas << ";" << avgDiff << ";" << minDiff << ";" << maxDiff << ";" << seed;
+    ss << "\n" << entrada << " - " << custoSolIG;
     fputs(ss.str().c_str(), file);
     
     fclose(file);
-    cout << "Tamanho da Solucao: " << custoSolIG;
-    cout << ", Tempo Solucao Inicial: " << tempoSolucaoInicial << "ms" << ", Tempo IG: " << tempoIG << "ms" << ", Tempo IG (Mip): " << tempoMip << "ms" << ", Tempo IG (Construtivo): " << tempoIG - tempoMip << "ms" << ", Tempo melhor solucao: " << tempoMelhorSolucao << "ms" << ", Iterações do GRASP: " << numIteracoesGrasp << ", Numero de Solucoes Repetidas: " << numSolucoesRepetidasIG << ", Numero de Solucoes Parciais Repetidas: " << numParciaisRepetidas << endl << endl;
+    cout << custoSolIG;
+    //cout << "Tamanho da Solucao: " << custoSolIG;
+    //cout << ", Tempo Solucao Inicial: " << tempoSolucaoInicial << "ms" << ", Tempo IG: " << tempoIG << "ms" << ", Tempo IG (Mip): " << tempoMip << "ms" << ", Tempo IG (Construtivo): " << tempoIG - tempoMip << "ms" << ", Tempo melhor solucao: " << tempoMelhorSolucao << "ms" << ", Iterações do GRASP: " << numIteracoesGrasp << ", Numero de Solucoes Repetidas: " << numSolucoesRepetidasIG << ", Numero de Solucoes Parciais Repetidas: " << numParciaisRepetidas << endl << endl;
     
     /*if(seed == 0) {
         float minNumCompConexas = INT_MAX;
@@ -3592,8 +3596,33 @@ void cenarioSete(string entrada, string saida) {
 }
 
 int main(int argc, char **argv) { 
-    int metodo = stoi(argv[1]) ;
-    
+    int metodo = stoi(argv[1]);
+    int seed = stoi(argv[2]);
+
+    string str;
+    string parameters[6] = {
+        "--numIteracoes",
+        "--numSolucoesConst", 
+        "--numTentativas",
+        "--beta1",
+        "--beta2",
+        "--tempoLimite"
+    };
+
+    str = argv[4];
+    int numIteracoes = stoi(str.substr(parameters[0].length(), str.length()-parameters[0].length()));
+    str = argv[5];
+    int numSolucoesConst = stoi(str.substr(parameters[1].length(), str.length()-parameters[1].length()));
+    str = argv[6];
+    int numTentativas = stoi(str.substr(parameters[2].length(), str.length()-parameters[2].length()));
+    str = argv[7];
+    float beta1 = stof(str.substr(parameters[3].length(), str.length()-parameters[3].length()));
+    str = argv[8];
+    float beta2 = stof(str.substr(parameters[4].length(), str.length()-parameters[4].length()));
+    str = argv[9];
+    float tempoLimite = stof(str.substr(parameters[5].length(), str.length()-parameters[5].length()));
+    float betas[2] = { beta1, beta2 };
+
     if(argc < 2) {
         cout << "Parametro necessario:metodo(0 - Reativo, 1 - GRASP, 2 - MIP)" << endl;
         return 0;
@@ -3605,11 +3634,28 @@ int main(int argc, char **argv) {
         }
         cenarioCinco(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stof(argv[6]), stof(argv[7]), stof(argv[8]), stoi(argv[9]));
     } else if(metodo == 5){
-        if(argc < 7) {
-            cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, tempo limite do GRASP, seed" << endl;
+        if(argc < 10) {
+            cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, número de soluções construtivas, número de tentativas, coeficiente de remoção 1, coeficiente de remoção 2, tempo limite do GRASP, seed" << endl;
             return 0;
         }
-        cenarioSeis(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stoi(argv[6]));
+        /*float betas[2];
+        stringstream ss;
+        string strBetas = argv[7];
+        string token;
+        size_t pos=-1;
+        int i = 0;
+
+        strBetas = strBetas.substr(1);
+        strBetas = strBetas.substr(0, strBetas.length()-1);
+
+        ss << strBetas;
+        cout << strBetas << endl;
+        while(std::getline(ss, token, ',')) {
+            betas[i] = stof(token);
+            i++;
+        }*/
+
+        cenarioSeis(argv[3], "saida.txt", numIteracoes, numSolucoesConst, numTentativas, betas, tempoLimite, seed);
     } else if(metodo == 6){
         if(argc < 4) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida" << endl;

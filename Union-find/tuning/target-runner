@@ -21,8 +21,8 @@ error() {
     exit 1
 }
 
-EXE=~/bin/program
-FIXED_PARAMS=""
+EXE=~/Documentos/UFJF/Pesquisa/mlstp/Union-find/main.out
+FIXED_PARAMS="5 0"
 
 CONFIG_ID=$1
 INSTANCE_ID=$2
@@ -31,8 +31,8 @@ INSTANCE=$4
 shift 4 || error "Not enough parameters"
 CONFIG_PARAMS=$*
 
-STDOUT=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stdout
-STDERR=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stderr
+STDOUT=~/Documentos/UFJF/Pesquisa/mlstp/Union-find/tuning/saidas/${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stdout
+STDERR=~/Documentos/UFJF/Pesquisa/mlstp/Union-find/tuning/saidas/${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stderr
 
 if [ ! -x "${EXE}" ]; then
     error "${EXE}: not found or not executable (pwd: $(pwd))"
@@ -46,7 +46,7 @@ fi
 # Otherwise, save the output to a file, and parse the result from it.
 # (If you wish to ignore segmentation faults you can use '{}' around
 # the command.)
-$EXE ${FIXED_PARAMS} -i $INSTANCE --seed ${SEED} ${CONFIG_PARAMS} 1> ${STDOUT} 2> ${STDERR}
+$EXE ${FIXED_PARAMS} $INSTANCE ${CONFIG_PARAMS} 1> ${STDOUT} 2> ${STDERR}
 
 # # This may be used to introduce a delay if there are filesystem
 # # issues.

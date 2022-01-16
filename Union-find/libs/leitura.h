@@ -12,6 +12,7 @@ GrafoListaAdj* carregaInstancias(const char* filePath) {
     GrafoListaAdj* grafo;
     
     file = fopen(filePath, "rt");
+    
     if(file == NULL) {
         cout << "Arquivo inexistente" << endl;
         return nullptr;
@@ -28,6 +29,7 @@ GrafoListaAdj* carregaInstancias(const char* filePath) {
     int i = 0;
     int j;
     int count = 0;
+    
     grafo = new GrafoListaAdj(numVertices, numLabels);
     while(!feof(file)) {
         unusedReturn = fgets(linha, 3000, file);
