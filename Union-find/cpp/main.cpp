@@ -898,8 +898,8 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
         beta = -0.00033*temp + 0.9;
         for(int i=0; i<numIteracoes; i++) {       
             if(*numSolucoes < numAlphas) {
-                //novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
-                novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
+                novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
+                //novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[*numSolucoes], beta, env, parciais);
                 countAlphas.push_back(1);
                 sumCustoSolucoes.push_back(novaSolucao->size());
             }
@@ -913,8 +913,8 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
                         break;
                     }
                 }
-                //novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
-                novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
+                novaSolucao = pertubacao(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
+                //novaSolucao = pertubacao2(grafo, solucao, tempoBuscaLocal, &valida, alphas[indiceAlpha], beta, env, parciais);
                 countAlphas[indiceAlpha]++;
                 sumCustoSolucoes[indiceAlpha] += novaSolucao->size();
             }
