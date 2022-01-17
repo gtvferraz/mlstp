@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     double taxaDecaimento;
     double tempInicial;
     double tempFinal;
-    //int tempoLimiteLiteratura[6] = {1, 20, 60, 140, 300, 900};
+    //int tempoLimiteLiteratura[6] = {1, 20, 60, 14 300, 900};
     int tempoLimiteLiteratura[6] = {5, 25, 50, 140, 200, 800};
     float tempoLimiteGraspSA[6] = {0.001, 0.05, 0.1, 1, 1, 1};
 
