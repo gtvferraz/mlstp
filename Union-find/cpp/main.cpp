@@ -1496,7 +1496,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     tempoMelhorSolucao = tempoSolucaoInicial;
     
     custoSolucaoInicial = solucaoInicial->size();
-    cout << "Solucao Inicial: " << solucaoInicial->size() << ", Tempo: " << tempoSolucaoInicial << "ms" << endl;
+    //cout << "Solucao Inicial: " << solucaoInicial->size() << ", Tempo: " << tempoSolucaoInicial << "ms" << endl;
     
     srand(seed);
     int custoSolSa;
@@ -1529,12 +1529,14 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
 
     ss.str("");
     ss.clear();
-    ss << "\n" << custoSolSa << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << numParciaisRepetidas << ";" << seed;
+    ss << "\n" << entrada << " - " << custoSolSa;
+    //ss << "\n" << custoSolSa << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << numParciaisRepetidas << ";" << seed;
     fputs(ss.str().c_str(), file);
     
     fclose(file);
-    cout << "Tamanho da Solucao: " << custoSolSa;
-    cout << ", Tempo Solucao Inicial: " << tempoSolucaoInicial << "ms" << ", Tempo SA: " << tempoSA << "ms" << ", Tempo SA (Busca Local): " << tempoBuscaLocal << "ms" << ", Tempo SA (Construtivo): " << tempoSA - tempoBuscaLocal << "ms" << ", Tempo melhor solucao: " << tempoMelhorSolucao << "ms" << ", Numero de Solucoes Parciais Repetidas: " << numParciaisRepetidas << endl << endl;
+    //cout << "Tamanho da Solucao: " << custoSolSa;
+    //cout << ", Tempo Solucao Inicial: " << tempoSolucaoInicial << "ms" << ", Tempo SA: " << tempoSA << "ms" << ", Tempo SA (Busca Local): " << tempoBuscaLocal << "ms" << ", Tempo SA (Construtivo): " << tempoSA - tempoBuscaLocal << "ms" << ", Tempo melhor solucao: " << tempoMelhorSolucao << "ms" << ", Numero de Solucoes Parciais Repetidas: " << numParciaisRepetidas << endl << endl;
+    cout << custoSolSa;
 
     //delete [] solucaoSA;
     delete solucaoSA;
@@ -1628,17 +1630,17 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
 }
 
 int main(int argc, char **argv) { 
-    int metodo = stoi(argv[1]) ;
+    int metodo = 3;
     if(argc < 2) {
         cout << "Parametro necessario:metodo(0 - Reativo, 1 - GRASP, 2 - MIP)" << endl;
         return 0;
     }
     if(metodo == 3){
-        if(argc < 10) {
+        if(argc < 8) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, seed" << endl;
             return 0;
         }
-        cenarioCinco(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stof(argv[6]), stof(argv[7]), stof(argv[8]), stoi(argv[9]));
+        cenarioCinco(argv[1], "saida.txt", stoi(argv[2]), stof(argv[3]), stof(argv[4]), stof(argv[5]), stof(argv[6]), stoi(argv[7]));
     } else if(metodo == 5){
         if(argc < 7) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, tempo limite do GRASP, seed" << endl;
