@@ -3301,7 +3301,7 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, int numSolucoes
     vector<int>* vetNumCompConexas = new vector<int>;
 
     srand(seed);
-    //custoOtimo = custoSolucaoExata(entrada);
+    custoOtimo = custoSolucaoExata(entrada);
     //custoOtimo = -1;
     env = new GRBEnv();
     
