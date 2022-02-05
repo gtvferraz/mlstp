@@ -2296,7 +2296,7 @@ vector<int>* pertubacaoMIP(GrafoListaAdj* grafo, vector<int>* solucao, float* te
     return vizinha;
 }
 
-vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIteracoes, std::chrono::high_resolution_clock::time_point* tempoMelhorSolucao, float* tempoMip, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* numParciaisRepetidas, clock_t tempoInicio, float *mediaItMelhora, float *minItMelhora, float *maxItMelhora, vector<int>* vetNumCompConexas) {
+vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numIteracoes, std::chrono::high_resolution_clock::time_point* tempoMelhorSolucao, float* tempoMip, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* numParciaisRepetidas, clock_t tempoInicio, std::chrono::high_resolution_clock::time_point* tempoInicioReal, float *mediaItMelhora, float *minItMelhora, float *maxItMelhora, vector<int>* vetNumCompConexas) {
     vector<int>* solucao;
     vector<int>* novaSolucao;
     vector<int>* melhorSolucao;
@@ -2499,8 +2499,8 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
     if(construtivas.size() < numSolucoesConst)
         delete solucao;
 
-    alphas[0] = 0.4;
-    alphas[1] = 0.6;
+    alphas[0] = 0.3;
+    alphas[1] = 0.7;
     /*alphas[0] = 1;
     alphas[1] = 2;*/
     numAlphas = 2;
@@ -2539,7 +2539,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
 
     for(int i=0; i<construtivas.size(); i++) { 
         tentativas = 0;
-        while(tentativas < 10) { 
+        while(tentativas < 30) { 
             solucao = construtivas[i];
 
             aleatorio = rand() % 100;
@@ -2620,6 +2620,24 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
                 }
             } else  {
                 *numParciaisRepetidas += 1;
+            }
+
+            auto diff = std::chrono::high_resolution_clock::now() - *tempoInicioReal;
+            auto auxTempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
+            float tempoTotal = auxTempo.count()/1000.0;
+
+            cout << "T: " << tempoTotal << "ms" << endl;
+
+            if(tempoTotal >= 300000) {
+                for(int j=0; j<parciais->size(); j++)
+                    delete parciais->at(j);
+                delete parciais;
+
+                *mediaItMelhora /= countMelhoras;
+
+                delete []z;
+
+                return melhorSolucao;
             }
 
             /*
@@ -3316,9 +3334,13 @@ void cenarioSeis(string entrada, string saida, int numIteracoes, float tempoLimi
     
     srand(seed);
     int custoSolIG;
+
+    numIteracoes = 350;
+    tempoMip = 10;
+
     if(solucaoInicial->size() != custoOtimo) {
         start = std::chrono::high_resolution_clock::now();
-        solucaoIG = IG(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas);
+        solucaoIG = IG(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &start, &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas);
         //solucaoIG = IG3(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
         //solucaoIG = IG2(grafo, solucaoInicial, numIteracoes, &stopMelhor, &tempoMip, custoOtimo, &numSolucoesIG, &numSolucoesRepetidasIG, env, &numParciaisRepetidas, tempo[0], &mediaItMelhora, &minItMelhora, &maxItMelhora, vetNumCompConexas, &avgDiff, &minDiff, &maxDiff);
         diff = std::chrono::high_resolution_clock::now() - start;
@@ -3609,6 +3631,8 @@ int main(int argc, char **argv) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, tempo limite do GRASP, seed" << endl;
             return 0;
         }
+
+
         cenarioSeis(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stoi(argv[6]));
     } else if(metodo == 6){
         if(argc < 4) {
