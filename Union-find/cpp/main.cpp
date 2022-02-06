@@ -2626,7 +2626,7 @@ vector<int>* IG(GrafoListaAdj* grafo, vector<int>* initialSolution, int numItera
             auto auxTempo = std::chrono::duration_cast<std::chrono::microseconds>(diff);
             float tempoTotal = auxTempo.count()/1000.0;
 
-            cout << "T: " << tempoTotal << "ms" << endl;
+            //cout << "T: " << tempoTotal << "ms" << endl;
 
             if(tempoTotal >= 300000) {
                 for(int j=0; j<parciais->size(); j++)
