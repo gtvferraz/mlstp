@@ -830,7 +830,7 @@ vector<int>* pertubacao2(GrafoListaAdj* grafo, vector<int>* solucao, float* temp
     return vizinha;
 }
 
-vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempInicial, double tempFinal, int numIteracoes, double alpha, clock_t* tempoMelhorSolucao, float* tempoBuscaLocal, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* parciaisRepetidas) {
+vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempInicial, double tempFinal, int numIteracoes, double alpha, clock_t* tempoInicial, clock_t* tempoMelhorSolucao, float* tempoBuscaLocal, int custoOtimo, int* numSolucoes, int* numSolucoesRepetidas, GRBEnv* env, int* parciaisRepetidas) {
     vector<int>* solucao;
     vector<int>* novaSolucao;
     vector<int>* melhorSolucao;
@@ -1034,6 +1034,21 @@ vector<int>* SA(GrafoListaAdj* grafo, vector<int>* initialSolution, double tempI
             }
         }*/
         temp = alpha*temp;
+
+        float tempoAtual = ((float)(clock() - *tempoInicial)*1000.0) / CLOCKS_PER_SEC;
+        //cout << "T: " << tempoAtual << "ms" << endl;
+        
+        if(tempoAtual >= 1000000) {
+            if(!aux)
+                delete solucao;
+            
+            *parciaisRepetidas = *numSolucoes - parciais->size();
+            for(int i=0; i<parciais->size(); i++)
+                delete parciais->at(i);
+            delete parciais;
+
+            return melhorSolucao;
+        }
     }
     //cout << "TOTAL: " << contabiliza.size() << ", de " << total << endl;
     //cout << "REPETIDOS: " << repetidos << endl;
@@ -1489,6 +1504,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     custoOtimo = custoSolucaoExata(entrada);
     env = new GRBEnv();
     
+    tempoLimite = 0.05;
     tempo[0] = clock();
     solucaoInicial = GRASP(grafo, tempoLimite, &tempo[1], nullptr, &solucaoConstrutivo, env, custoOtimo, &numIteracoesGrasp, &numSolucoesRepetidasGrasp);
     tempoSolucaoInicial = (float)(tempo[1] - tempo[0]) / CLOCKS_PER_SEC;
@@ -1502,7 +1518,7 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
     int custoSolSa;
     if(solucaoInicial->size() != custoOtimo) {
         tempo[0] = clock();
-        solucaoSA = SA(grafo, solucaoInicial, tempInicial, tempFinal, numIteracoes, alpha, &tempo[1], &tempoBuscaLocal, custoOtimo, &numSolucoesSA, &numSolucoesRepetidasSA, env, &numParciaisRepetidas);
+        solucaoSA = SA(grafo, solucaoInicial, tempInicial, tempFinal, numIteracoes, alpha, &tempo[0], &tempo[1], &tempoBuscaLocal, custoOtimo, &numSolucoesSA, &numSolucoesRepetidasSA, env, &numParciaisRepetidas);
         tempoSA = (float)(clock() - tempo[0]) / CLOCKS_PER_SEC;
         
         custoSolSa = solucaoSA->size();
@@ -1529,8 +1545,8 @@ void cenarioCinco(string entrada, string saida, int numIteracoes, double alpha, 
 
     ss.str("");
     ss.clear();
-    ss << "\n" << entrada << " - " << custoSolSa;
-    //ss << "\n" << custoSolSa << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << numParciaisRepetidas << ";" << seed;
+    //ss << "\n" << entrada << " - " << custoSolSa;
+    ss << "\n" << custoSolSa << ";" << custoSolucaoInicial << ";" << tempoSolucaoInicial << ";" << tempoSA << ";" << tempoSA - tempoBuscaLocal << ";" << tempoBuscaLocal << ";" << tempoMelhorSolucao << ";" << tempoLimite*1000 << ";" << numIteracoesGrasp << ";" << numSolucoesRepetidasGrasp << ";" << numSolucoesSA << ";" << numSolucoesRepetidasSA << ";" << numParciaisRepetidas << ";" << seed;
     fputs(ss.str().c_str(), file);
     
     fclose(file);
@@ -1640,7 +1656,8 @@ int main(int argc, char **argv) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, taxa de decaimento, temperatura inicial e final, tempo limite do GRASP, seed" << endl;
             return 0;
         }
-        cenarioCinco(argv[1], "saida.txt", stoi(argv[2]), stof(argv[3]), stof(argv[4]), stof(argv[5]), stof(argv[6]), stoi(argv[7]));
+        cenarioCinco(argv[2], argv[3], stoi(argv[4]), stof(argv[5]), stof(argv[6]), stof(argv[7]), stof(argv[8]), stoi(argv[9]));
+        //cenarioCinco(argv[1], "saida.txt", stoi(argv[2]), stof(argv[3]), stof(argv[4]), stof(argv[5]), stof(argv[6]), stoi(argv[7]));
     } else if(metodo == 5){
         if(argc < 7) {
             cout << "Parametros necessarios: arquivo de entrada, arquivo de saida, numero de iteracoes, tempo limite do GRASP, seed" << endl;
