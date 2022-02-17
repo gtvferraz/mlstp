@@ -100,8 +100,9 @@ void removeCiclosMono(string pathLeitura, string pathEscrita) {
             linha.push_back(grafo->edges.size());
 
         for(int j=0; j<grafo->edgesVertices[i]->size(); j++) {
-            linha[grafo->edgesVertices[i]->at(j)->y-i-1] = grafo->edgesVertices[i]->at(j)->label;
-
+            //cout << grafo->edgesVertices[i]->at(j)->y-i-1 << " " << i << ":" << grafo->edgesVertices[i]->at(j)->x << "-" << grafo->edgesVertices[i]->at(j)->y << endl;
+            if (grafo->edgesVertices[i]->at(j)->x >= i)
+                linha[grafo->edgesVertices[i]->at(j)->y-i-1] = grafo->edgesVertices[i]->at(j)->label;
         }
 
         for(int j=0; j<linha.size(); j++) {   
@@ -114,10 +115,8 @@ void removeCiclosMono(string pathLeitura, string pathEscrita) {
         }
         fputs("\n", file);
     }
-    cout << "D" << endl;
     delete grafo;
     fclose(file);
-    cout << "C" << endl;
 }
 
 void preparaDataset() {
@@ -178,17 +177,17 @@ void preparaDataset() {
         ss.clear();
         ss << pathEscrita << n2[i] << "/";
         //mkdir(ss.str().c_str());
-        for(int j=0; j<1; j++) {
+        for(int j=1; j<3; j++) {
             ss.str("");
             ss.clear();
             ss << pathEscrita << n2[i] << "/" << d[j] << "/";
             //mkdir(ss.str().c_str());
-            for(int k=0; k<4; k++) {
+            for(int k=3; k<4; k++) {
                 ss.str("");
                 ss.clear();
                 ss << pathEscrita << n2[i] << "/" << d[j] << "/" << label[i][k] << "/";
                 //mkdir(ss.str().c_str());
-                for(int l=0; l<1; l++) {
+                for(int l=0; l<10; l++) {
                     ss.str("");
                     ss.clear();
                     ss << pathLeitura << n2[i] << "/" << d[j] << "/" << label[i][k] << "/" << l;
@@ -196,9 +195,7 @@ void preparaDataset() {
                     ss2.str("");
                     ss2.clear();
                     ss2 << pathEscrita << n2[i] << "/" << d[j] << "/" << label[i][k] << "/" << l << ".txt";
-                    cout << "A" << endl;
                     removeCiclosMono(ss.str(), ss2.str());
-                    cout << "B" << endl;
                 }
             }
         }

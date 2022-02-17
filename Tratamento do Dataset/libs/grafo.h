@@ -13,17 +13,25 @@ struct Edge {
     Edge* ant;
     Edge* next = nullptr;
 
-    Edge(){}
+    Edge(){
+        this->ant = nullptr;
+        this->next = nullptr;
+    }
 
     Edge(int x, int y, int label){
         this->x = x;
         this->y = y;
         this->label = label;
+        this->ant = nullptr;
+        this->next = nullptr;
     }
 
     ~Edge() {
-        if(next != nullptr)
+        if(next != nullptr) {
             delete next;
+            next = nullptr;
+        }
+        ant = nullptr;
     }
 
     int getProx(int x) {
@@ -58,10 +66,16 @@ struct Grafo {
 
     ~Grafo() {
         for(int i=0; i<edges.size(); i++)
-            delete edges[i];
+            if(edges[i] != nullptr) {
+                delete edges[i];
+                edges[i] = nullptr;
+            }
 
         for(int i=0; i<edgesVertices.size(); i++) {
-            delete edgesVertices[i];
+            if(edgesVertices[i] != nullptr) {
+                delete edgesVertices[i];
+                edgesVertices[i] = nullptr;
+            }
         }
     }
 

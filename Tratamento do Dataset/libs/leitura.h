@@ -16,9 +16,9 @@ Grafo* carregaInstancias(const char* filePath) {
         return nullptr;
     }
 
-    char linha[4000];
+    char linha[10000];
     char* split;
-    fgets(linha, 50, file);
+    fgets(linha, 10000, file);
     split = strtok(linha, " ");
     numVertices = atoi(split);
     split = strtok(NULL, " ");
@@ -31,7 +31,7 @@ Grafo* carregaInstancias(const char* filePath) {
     grafo = new Grafo(numVertices, numLabels);
     
     while(!feof(file)) {
-        fgets(linha, 4000, file);
+        fgets(linha, 10000, file);
         split = strtok(linha, " ");
         
         for(j = i+1; j<numVertices; j++) {
