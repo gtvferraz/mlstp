@@ -17,7 +17,7 @@ GrafoListaAdj* carregaInstancias(const char* filePath) {
         return nullptr;
     }
 
-    char linha[3000];
+    char linha[10000];
     char* split;
     unusedReturn = fgets(linha, 50, file);
     split = strtok(linha, " ");
@@ -30,7 +30,7 @@ GrafoListaAdj* carregaInstancias(const char* filePath) {
     int count = 0;
     grafo = new GrafoListaAdj(numVertices, numLabels);
     while(!feof(file)) {
-        unusedReturn = fgets(linha, 3000, file);
+        unusedReturn = fgets(linha, 10000, file);
         split = strtok(linha, " ");
         for(j = i+1; j<numVertices; j++) {
             if(atoi(split) < numLabels) {
